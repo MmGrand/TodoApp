@@ -1,7 +1,7 @@
 include .env
 export
 
-export PROJECT_ROOT=$(CURDIR)
+export PROJECT_ROOT=$(shell cygpath -m "$(CURDIR)" 2>/dev/null || echo "$(CURDIR)")
 
 # MSYS2: не преобразовывать аргументы вида /path в C:/msys64/path для docker
 export MSYS2_ARG_CONV_EXCL=*
