@@ -1,7 +1,7 @@
 include .env
 export
 
-export PROJECT_ROOT=$(CURDIR)
+export PROJECT_ROOT=$(shell cygpath -m "$(CURDIR)" 2>/dev/null || echo "$(CURDIR)")
 
 # MSYS2: не преобразовывать аргументы вида /path в C:/msys64/path для docker
 export MSYS2_ARG_CONV_EXCL=*
@@ -54,6 +54,15 @@ migrate-action:
 		-path /migrations \
 		-database "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todoapp-postgres:5432/${POSTGRES_DB}?sslmode=disable" \
 		"$(action)"
+
+logs-cleanup:
+	@read -p "Очистить все log файлы? Опасность утери логов. [y/N]: " ans; \
+	if [ "$$ans" = "y" ]; then \
+			rm -rf ${PROJECT_ROOT}/out/logs && \
+			echo "Файлы логов очищены"; \
+	else \
+		echo "Очистка логов отменена"; \
+	fi
 
 todoapp-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
