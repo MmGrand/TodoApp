@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (s *TasksService) DeleteUser(
+func (s *TasksService) DeleteTask(
 	ctx context.Context,
 	id int,
 ) error {
