@@ -12,9 +12,9 @@ import (
 )
 
 type PatchTaskRequest struct {
-	Title       core_http_types.Nullable[string] `json:"title"`
-	Description core_http_types.Nullable[string] `json:"description"`
-	Completed   core_http_types.Nullable[bool]   `json:"completed"`
+	Title       core_http_types.Nullable[string] `json:"title" swaggertype:"string" example:"Купить продукты и воду"`
+	Description core_http_types.Nullable[string] `json:"description" swaggertype:"string" example:"Молоко, хлеб, яйца, вода"`
+	Completed   core_http_types.Nullable[bool]   `json:"completed" swaggertype:"boolean" example:"true"`
 }
 
 func (r *PatchTaskRequest) Validate() error {
@@ -49,6 +49,22 @@ func (r *PatchTaskRequest) Validate() error {
 
 type PatchTaskResponse TaskDTOResponse
 
+// PatchTask godoc
+// @Summary Изменение задачи
+// @Description Обновить поля существующей задачи по её ID.
+// @Description Передаются только изменяемые поля: отсутствующее поле не меняется,
+// @Description `null` в `description` очищает описание. `title` и `completed` не могут быть `null`.
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Param id path int true "ID изменяемой задачи"
+// @Param request body PatchTaskRequest true "PatchTask тело запроса"
+// @Success 200 {object} PatchTaskResponse "Обновлённая задача"
+// @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
+// @Failure 404 {object} core_http_response.ErrorResponse "Task not found"
+// @Failure 409 {object} core_http_response.ErrorResponse "Conflict: task was concurrently modified"
+// @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"
+// @Router /tasks/{id} [patch]
 func (h *TasksHTTPHandler) PatchTask(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)

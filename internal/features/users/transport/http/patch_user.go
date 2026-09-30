@@ -13,8 +13,8 @@ import (
 )
 
 type PatchUserRequest struct {
-	FullName    core_http_types.Nullable[string] `json:"full_name"`
-	PhoneNumber core_http_types.Nullable[string] `json:"phone_number"`
+	FullName    core_http_types.Nullable[string] `json:"full_name" swaggertype:"string" example:"Ivan Petrov"`
+	PhoneNumber core_http_types.Nullable[string] `json:"phone_number" swaggertype:"string" example:"+79998887766"`
 }
 
 func (r *PatchUserRequest) Validate() error {
@@ -47,6 +47,22 @@ func (r *PatchUserRequest) Validate() error {
 
 type PatchUserResponse UserDTOResponse
 
+// PatchUser godoc
+// @Summary Изменение пользователя
+// @Description Обновить поля существующего пользователя по его ID.
+// @Description Передаются только изменяемые поля: отсутствующее поле не меняется,
+// @Description `null` в `phone_number` очищает номер телефона. `full_name` не может быть `null`.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path int true "ID изменяемого пользователя"
+// @Param request body PatchUserRequest true "PatchUser тело запроса"
+// @Success 200 {object} PatchUserResponse "Обновлённый пользователь"
+// @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
+// @Failure 404 {object} core_http_response.ErrorResponse "User not found"
+// @Failure 409 {object} core_http_response.ErrorResponse "Conflict: user was concurrently modified"
+// @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"
+// @Router /users/{id} [patch]
 func (h *UserHTTPHandler) PatchUser(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
