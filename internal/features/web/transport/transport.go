@@ -1,6 +1,8 @@
 package web_transport_http
 
 import (
+	"net/http"
+
 	core_http_server "github.com/MmGrand/TodoApp/internal/core/transport/http/server"
 )
 
@@ -13,17 +15,18 @@ type WebService interface {
 }
 
 func NewWebHTTPHandler(
-	WwebService WebService,
+	webService WebService,
 ) *WebHTTPHandler {
 	return &WebHTTPHandler{
-		webService: WwebService,
+		webService: webService,
 	}
 }
 
 func (h *WebHTTPHandler) Routes() []core_http_server.Route {
 	return []core_http_server.Route{
 		{
-			Path:    "/",
+			Method:  http.MethodGet,
+			Path:    "/{$}",
 			Handler: h.GetMainPage,
 		},
 	}

@@ -20,7 +20,12 @@ services:
       - ${PROJECT_ROOT}/out/logs:/app/out/logs
     ports:
       - "5050:5050"
-    restart: always   
+    depends_on:
+      todoapp-postgres:
+        condition: service_healthy
+      todoapp-postgres-migrate:
+        condition: service_completed_successfully
+    restart: always
 
   todoapp-postgres:
     image: postgres:18.1-bookworm
@@ -31,12 +36,26 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - ${PROJECT_ROOT}/out/pgdata:/var/lib/postgresql
-    restart: always 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: always
 
   todoapp-postgres-migrate:
     image: migrate/migrate:v4.19.1
-    volumes: 
+    volumes:
       - ${PROJECT_ROOT}/migrations:/migrations
+    command:
+      - -path
+      - /migrations
+      - -database
+      - postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todoapp-postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - up
+    depends_on:
+      todoapp-postgres:
+        condition: service_healthy
 
   port-forwarder:
     image: alpine/socat:1.8.0.3
@@ -54,5 +73,5 @@ services:
         RUN go install github.com/swaggo/swag/cmd/swag@v1.16.6
         WORKDIR /code
         ENTRYPOINT ["swag"]
-    volumes: 
+    volumes:
       - ${PROJECT_ROOT}:/code

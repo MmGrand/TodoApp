@@ -2,9 +2,12 @@ package users_postgres_repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/MmGrand/TodoApp/internal/core/domain"
+	core_errors "github.com/MmGrand/TodoApp/internal/core/errors"
+	core_postgres_pool "github.com/MmGrand/TodoApp/internal/core/repository/postgres/pool"
 )
 
 func (r *UsersRepository) CreateUser(
@@ -30,6 +33,10 @@ func (r *UsersRepository) CreateUser(
 		&userModel.PhoneNumber,
 	)
 	if err != nil {
+		if errors.Is(err, core_postgres_pool.ErrViolatesCheck) {
+			return domain.User{}, fmt.Errorf("%w: %w", core_postgres_pool.ErrViolatesCheck, core_errors.ErrInvalidArgument)
+		}
+
 		return domain.User{}, fmt.Errorf("scan error: %w", err)
 	}
 

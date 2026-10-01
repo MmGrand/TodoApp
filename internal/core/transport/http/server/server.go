@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/MmGrand/TodoApp/docs"
 	core_logger "github.com/MmGrand/TodoApp/internal/core/logger"
@@ -72,12 +73,42 @@ func (s *HTTPServer) RegisterSwagger() {
 	)
 }
 
+func (s *HTTPServer) RegisterHealthCheck(check func(ctx context.Context) error) {
+	const checkTimeout = 2 * time.Second
+
+	s.mux.HandleFunc(
+		"GET /health",
+		func(w http.ResponseWriter, r *http.Request) {
+			ctx, cancel := context.WithTimeout(r.Context(), checkTimeout)
+			defer cancel()
+
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+			if err := check(ctx); err != nil {
+				s.log.Warn("health check failed", zap.Error(err))
+
+				w.WriteHeader(http.StatusServiceUnavailable)
+				_, _ = w.Write([]byte(`{"status":"unavailable"}`))
+
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"ok"}`))
+		},
+	)
+}
+
 func (s *HTTPServer) Run(ctx context.Context) error {
 	mux := core_http_middleware.ChainMiddleware(s.mux, s.middleware...)
 
 	server := &http.Server{
-		Addr:    s.config.Addr,
-		Handler: mux,
+		Addr:              s.config.Addr,
+		Handler:           mux,
+		ReadHeaderTimeout: s.config.ReadHeaderTimeout,
+		ReadTimeout:       s.config.ReadTimeout,
+		WriteTimeout:      s.config.WriteTimeout,
+		IdleTimeout:       s.config.IdleTimeout,
 	}
 
 	ch := make(chan error, 1)
@@ -97,7 +128,7 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 	select {
 	case err := <-ch:
 		if err != nil {
-			return fmt.Errorf("listen and server HTTP: %w", err)
+			return fmt.Errorf("listen and serve HTTP: %w", err)
 		}
 	case <-ctx.Done():
 		s.log.Warn("shutdown HTTP server...")

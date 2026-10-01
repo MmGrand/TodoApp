@@ -8,9 +8,14 @@ import (
 )
 
 type Config struct {
-	Addr            string        `envconfig:"ADDR" required:"true"`
-	ShutdownTimeout time.Duration `envconfig:"SHUTDOWN_TIMEOUT" default:"30s"`
-	AllowedOrigins  []string      `envconfig:"ALLOWED_ORIGINS" required:"true"`
+	Addr              string        `envconfig:"ADDR" required:"true"`
+	ShutdownTimeout   time.Duration `envconfig:"SHUTDOWN_TIMEOUT" default:"30s"`
+	ReadHeaderTimeout time.Duration `envconfig:"READ_HEADER_TIMEOUT" default:"5s"`
+	ReadTimeout       time.Duration `envconfig:"READ_TIMEOUT" default:"15s"`
+	WriteTimeout      time.Duration `envconfig:"WRITE_TIMEOUT" default:"30s"`
+	IdleTimeout       time.Duration `envconfig:"IDLE_TIMEOUT" default:"60s"`
+	MaxBodyBytes      int64         `envconfig:"MAX_BODY_BYTES" default:"1048576"`
+	AllowedOrigins    []string      `envconfig:"ALLOWED_ORIGINS" required:"true"`
 }
 
 func NewConfig() (Config, error) {

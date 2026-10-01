@@ -2,7 +2,7 @@ package core_http_response
 
 import "net/http"
 
-var (
+const (
 	StatusCodeUninitialized = -1
 )
 
@@ -21,6 +21,10 @@ func NewResponseWriter(w http.ResponseWriter) *ResponseWriter {
 func (rw *ResponseWriter) WriteHeader(statusCode int) {
 	rw.ResponseWriter.WriteHeader(statusCode)
 	rw.statusCode = statusCode
+}
+
+func (rw *ResponseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
 }
 
 func (rw *ResponseWriter) GetStatusCode() int {

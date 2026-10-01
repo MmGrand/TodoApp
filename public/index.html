@@ -634,7 +634,7 @@ async function fetchAll(path) {
 function humanError(err) {
   if (!(err instanceof ApiError) || err.status === 0) return 'Не удалось связаться с сервером';
   const d = String(err.detail || '').toLowerCase();
-  if (d.includes('foreign key') || d.includes('23503')) return 'Есть связанные задачи — сначала удалите их';
+  if (d.includes('related records')) return 'Есть связанные задачи — сначала удалите их';
   switch (err.status) {
     case 400: return 'Некорректные данные';
     case 404: return 'Не найдено — возможно, объект уже удалён';
@@ -967,7 +967,7 @@ async function toggleTask(task) {
   pending.add(task.id);
   rerender();
   try {
-    upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { completed }));
+    upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { version: prev.version, completed }));
     toast(completed ? 'Задача выполнена' : 'Задача снова активна');
   } catch (err) {
     Object.assign(task, prev);
@@ -1028,7 +1028,7 @@ function openTaskModal(task) {
         if (completed !== task.completed) patch.completed = completed;
         if (!Object.keys(patch).length) return;
         try {
-          upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, patch));
+          upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { version: task.version, ...patch }));
         } catch (err) {
           if (err.status === 409 || err.status === 404) { await reloadTask(task.id); rerender(); }
           throw err;
@@ -1164,7 +1164,7 @@ function openUserModal(user) {
         if ((phone || null) !== (user.phone_number ?? null)) patch.phone_number = phone || null;
         if (!Object.keys(patch).length) return;
         try {
-          upsert(store.users, await api('PATCH', `/users/${user.id}`, patch));
+          upsert(store.users, await api('PATCH', `/users/${user.id}`, { version: user.version, ...patch }));
         } catch (err) {
           if (err.status === 409) {
             try { upsert(store.users, await api('GET', `/users/${user.id}`)); rerender(); } catch {}
@@ -1186,18 +1186,10 @@ function deleteUser(user) {
     submit: n ? `Удалить вместе с задачами (${n})` : 'Удалить',
     danger: true,
     body: `<p class="confirm-text">Пользователь <b>${esc(user.full_name)}</b> будет удалён без возможности восстановления.</p>
-      ${n ? `<div class="note">${icon('alert')}<span>У пользователя ${n} ${plural(n, 'задача', 'задачи', 'задач')}. Пользователя с задачами удалить нельзя, поэтому сначала будут удалены все его задачи.</span></div>` : ''}`,
+      ${n ? `<div class="note">${icon('alert')}<span>У пользователя ${n} ${plural(n, 'задача', 'задачи', 'задач')}, они будут удалены вместе с ним.</span></div>` : ''}`,
     onSubmit: async () => {
-      try {
-        for (const t of tasks) {
-          try { await api('DELETE', `/tasks/${t.id}`); } catch (err) { if (err.status !== 404) throw err; }
-          store.tasks = store.tasks.filter((x) => x.id !== t.id);
-        }
-        try { await api('DELETE', `/users/${user.id}`); } catch (err) { if (err.status !== 404) throw err; }
-      } catch (err) {
-        rerender();
-        throw err;
-      }
+      try { await api('DELETE', `/users/${user.id}`); } catch (err) { if (err.status !== 404) throw err; }
+      store.tasks = store.tasks.filter((t) => t.author_user_id !== user.id);
       store.users = store.users.filter((u) => u.id !== user.id);
       if (ts.author === String(user.id)) ts.author = '';
       toast('Пользователь удалён');

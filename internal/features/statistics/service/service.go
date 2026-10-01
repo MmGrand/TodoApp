@@ -12,12 +12,12 @@ type StatisticsService struct {
 }
 
 type StatisticsRepository interface {
-	GetTasks(
+	GetStatistics(
 		ctx context.Context,
 		userID *int,
 		from *time.Time,
 		to *time.Time,
-	) ([]domain.Task, error)
+	) (domain.Statistics, error)
 }
 
 func NewStatisticsService(

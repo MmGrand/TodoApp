@@ -38,6 +38,7 @@ type TasksService interface {
 	PatchTask(
 		ctx context.Context,
 		id int,
+		version int,
 		patch domain.TaskPatch,
 	) (domain.Task, error)
 }

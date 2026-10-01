@@ -13,6 +13,22 @@ type pgxRows struct {
 	pgx.Rows
 }
 
+func (r pgxRows) Scan(dest ...any) error {
+	if err := r.Rows.Scan(dest...); err != nil {
+		return mapErrors(err)
+	}
+
+	return nil
+}
+
+func (r pgxRows) Err() error {
+	if err := r.Rows.Err(); err != nil {
+		return mapErrors(err)
+	}
+
+	return nil
+}
+
 type pgxRow struct {
 	pgx.Row
 }
@@ -33,6 +49,7 @@ type pgxCommandTag struct {
 func mapErrors(err error) error {
 	const (
 		pgxViolatesForeignKeyErrorCode = "23503"
+		pgxViolatesCheckErrorCode      = "23514"
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -41,18 +58,14 @@ func mapErrors(err error) error {
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
-		if pgErr.Code == pgxViolatesForeignKeyErrorCode {
-			return fmt.Errorf(
-				"%v: %w",
-				err,
-				core_postgres_pool.ErrViolatesForeignKey,
-			)
+		switch pgErr.Code {
+		case pgxViolatesForeignKeyErrorCode:
+			return fmt.Errorf("%w: %w", err, core_postgres_pool.ErrViolatesForeignKey)
+
+		case pgxViolatesCheckErrorCode:
+			return fmt.Errorf("%w: %w", err, core_postgres_pool.ErrViolatesCheck)
 		}
 	}
 
-	return fmt.Errorf(
-		"%v: %w",
-		err,
-		core_postgres_pool.ErrUnknown,
-	)
+	return fmt.Errorf("%w: %w", err, core_postgres_pool.ErrUnknown)
 }

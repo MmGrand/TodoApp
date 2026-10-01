@@ -16,7 +16,7 @@ type GetUsersResponse []UserDTOResponse
 // @Description Получить список пользователей системы с поддержкой пагинации
 // @Tags users
 // @Produce json
-// @Param limit query int false "Максимальное количество пользователей в ответе"
+// @Param limit query int false "Максимальное количество пользователей в ответе (1–200, по умолчанию 50)"
 // @Param offset query int false "Количество пропускаемых пользователей"
 // @Success 200 {object} GetUsersResponse "Список пользователей"
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad request"

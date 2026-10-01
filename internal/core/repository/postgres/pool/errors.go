@@ -5,5 +5,6 @@ import "errors"
 var (
 	ErrNoRows             = errors.New("no rows")
 	ErrViolatesForeignKey = errors.New("violates foreign key")
+	ErrViolatesCheck      = errors.New("violates check constraint")
 	ErrUnknown            = errors.New("unknown")
 )

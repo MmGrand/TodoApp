@@ -37,6 +37,7 @@ type UsersService interface {
 	PatchUser(
 		ctx context.Context,
 		id int,
+		version int,
 		patch domain.UserPatch,
 	) (domain.User, error)
 }

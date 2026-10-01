@@ -3,6 +3,8 @@ package core_pgx_pool
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"time"
 
 	core_postgres_pool "github.com/MmGrand/TodoApp/internal/core/repository/postgres/pool"
@@ -18,16 +20,15 @@ func NewPool(
 	ctx context.Context,
 	config Config,
 ) (*Pool, error) {
-	connectionString := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		config.User,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database,
-	)
+	connectionURL := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(config.User, config.Password),
+		Host:     net.JoinHostPort(config.Host, config.Port),
+		Path:     config.Database,
+		RawQuery: url.Values{"sslmode": {config.SSLMode}}.Encode(),
+	}
 
-	pgxconfig, err := pgxpool.ParseConfig(connectionString)
+	pgxconfig, err := pgxpool.ParseConfig(connectionURL.String())
 	if err != nil {
 		return nil, fmt.Errorf("parse pgxconfig: %w", err)
 	}
@@ -54,7 +55,7 @@ func (p *Pool) Query(
 ) (core_postgres_pool.Rows, error) {
 	rows, err := p.Pool.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, err
+		return nil, mapErrors(err)
 	}
 
 	return pgxRows{rows}, nil
@@ -77,7 +78,7 @@ func (p *Pool) Exec(
 ) (core_postgres_pool.CommandTag, error) {
 	tag, err := p.Pool.Exec(ctx, sql, arguments...)
 	if err != nil {
-		return nil, err
+		return nil, mapErrors(err)
 	}
 
 	return pgxCommandTag{tag}, nil

@@ -3,7 +3,6 @@ package users_transport_http
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/MmGrand/TodoApp/internal/core/domain"
 	core_logger "github.com/MmGrand/TodoApp/internal/core/logger"
@@ -13,33 +12,14 @@ import (
 )
 
 type PatchUserRequest struct {
+	Version     int                              `json:"version" example:"3"`
 	FullName    core_http_types.Nullable[string] `json:"full_name" swaggertype:"string" example:"Ivan Petrov"`
 	PhoneNumber core_http_types.Nullable[string] `json:"phone_number" swaggertype:"string" example:"+79998887766"`
 }
 
 func (r *PatchUserRequest) Validate() error {
-	if r.FullName.Set {
-		if r.FullName.Value == nil {
-			return fmt.Errorf("`FullName` can't be NULL")
-		}
-
-		FullNameLen := len([]rune(*r.FullName.Value))
-		if FullNameLen < 3 || FullNameLen > 100 {
-			return fmt.Errorf("`FullName` must be between 3 and 100 symbols")
-		}
-	}
-
-	if r.PhoneNumber.Set {
-		if r.PhoneNumber.Value != nil {
-			PhoneNumberLen := len([]rune(*r.PhoneNumber.Value))
-			if PhoneNumberLen < 10 || PhoneNumberLen > 15 {
-				return fmt.Errorf("`PhoneNumber` must be between 10 and 15 symbols")
-			}
-
-			if !strings.HasPrefix(*r.PhoneNumber.Value, "+") {
-				return fmt.Errorf("`PhoneNumber` must startswith '+' symbol")
-			}
-		}
+	if r.Version < 1 {
+		return fmt.Errorf("`version` is required and must be positive")
 	}
 
 	return nil
@@ -52,6 +32,7 @@ type PatchUserResponse UserDTOResponse
 // @Description Обновить поля существующего пользователя по его ID.
 // @Description Передаются только изменяемые поля: отсутствующее поле не меняется,
 // @Description `null` в `phone_number` очищает номер телефона. `full_name` не может быть `null`.
+// @Description Обязательное поле `version` — версия пользователя, которую видел клиент; если его уже изменили, вернётся 409.
 // @Tags users
 // @Accept json
 // @Produce json
@@ -90,7 +71,7 @@ func (h *UserHTTPHandler) PatchUser(rw http.ResponseWriter, r *http.Request) {
 
 	userPatch := userPatchFromRequest(request)
 
-	userDomain, err := h.usersService.PatchUser(ctx, userID, userPatch)
+	userDomain, err := h.usersService.PatchUser(ctx, userID, request.Version, userPatch)
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,

@@ -22,12 +22,13 @@ type GetStatisticsResponse struct {
 // @Summary Статистика по задачам
 // @Description Получить статистику по задачам: количество созданных и выполненных,
 // @Description процент выполнения и среднее время выполнения.
-// @Description Можно отфильтровать по автору и периоду создания задач; `to` должен быть позже `from`.
+// @Description Можно отфильтровать по автору и периоду создания задач `[from, to)`; `to` должен быть позже `from`.
+// @Description Даты трактуются в часовом поясе приложения (TIME_ZONE).
 // @Tags statistics
 // @Produce json
 // @Param user_id query int false "ID автора задач"
 // @Param from query string false "Начало периода (YYYY-MM-DD)" Format(date)
-// @Param to query string false "Конец периода (YYYY-MM-DD)" Format(date)
+// @Param to query string false "Конец периода (YYYY-MM-DD), не включается: задачи, созданные строго до этой даты" Format(date)
 // @Success 200 {object} GetStatisticsResponse "Статистика по задачам"
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"

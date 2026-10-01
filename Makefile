@@ -1,4 +1,4 @@
-include .env
+-include .env
 export
 
 export PROJECT_ROOT=$(shell cygpath -m "$(CURDIR)" 2>/dev/null || echo "$(CURDIR)")
@@ -67,7 +67,6 @@ logs-cleanup:
 todoapp-run:
 	@export LOGGER_FOLDER=${PROJECT_ROOT}/out/logs && \
 	export POSTGRES_HOST=localhost && \
-	go mod tidy && \
 	go run ${PROJECT_ROOT}/cmd/todoapp/main.go
 
 todoapp-deploy:
