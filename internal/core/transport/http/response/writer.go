@@ -2,7 +2,7 @@ package core_http_response
 
 import "net/http"
 
-var (
+const (
 	StatusCodeUninitialized = -1
 )
 
@@ -21,6 +21,12 @@ func NewResponseWriter(w http.ResponseWriter) *ResponseWriter {
 func (rw *ResponseWriter) WriteHeader(statusCode int) {
 	rw.ResponseWriter.WriteHeader(statusCode)
 	rw.statusCode = statusCode
+}
+
+// Unwrap позволяет http.ResponseController добраться до исходного writer
+// (Flush, SetWriteDeadline и т.п.).
+func (rw *ResponseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
 }
 
 func (rw *ResponseWriter) GetStatusCode() int {

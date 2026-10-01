@@ -25,6 +25,7 @@ import (
 	web_fs_repository "github.com/MmGrand/TodoApp/internal/features/web/repository/file_system"
 	web_service "github.com/MmGrand/TodoApp/internal/features/web/service"
 	web_transport_http "github.com/MmGrand/TodoApp/internal/features/web/transport"
+	"github.com/MmGrand/TodoApp/public"
 	"go.uber.org/zap"
 
 	_ "github.com/MmGrand/TodoApp/docs"
@@ -33,24 +34,33 @@ import (
 // @title 			Golang Todo API
 // @version 		1.0
 // @description 	Todo Application REST-API scheme
-// @host 			127.0.0.1:5050
 // @BasePath 		/api/v1
 func main() {
 	cfg := core_config.NewConfigMust()
 	time.Local = cfg.TimeZone
-
-	ctx, cancel := signal.NotifyContext(
-		context.Background(),
-		syscall.SIGINT, syscall.SIGTERM,
-	)
-	defer cancel()
 
 	logger, err := core_logger.NewLogger(core_logger.NewConfigMust())
 	if err != nil {
 		fmt.Println("failed to init application logger: ", err)
 		os.Exit(1)
 	}
-	defer logger.Close()
+
+	err = run(logger)
+	logger.Close()
+
+	if err != nil {
+		os.Exit(1)
+	}
+}
+
+// run возвращает ошибку вместо logger.Fatal, чтобы отложенные
+// закрытия ресурсов (пул соединений) выполнялись до выхода.
+func run(logger *core_logger.Logger) error {
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT, syscall.SIGTERM,
+	)
+	defer cancel()
 
 	logger.Debug("application time zone", zap.Any("zone", time.Local))
 
@@ -60,7 +70,8 @@ func main() {
 		core_pgx_pool.NewConfigMust(),
 	)
 	if err != nil {
-		logger.Fatal("failed to init postgres connection pool", zap.Error(err))
+		logger.Error("failed to init postgres connection pool", zap.Error(err))
+		return err
 	}
 	defer pool.Close()
 
@@ -80,11 +91,11 @@ func main() {
 	statisticsTransportHTTP := statistics_transport_http.NewStatisticsHTTPHandler(statisticsService)
 
 	logger.Debug("initializing feature", zap.String("feature", "web"))
-	webRepository := web_fs_repository.NewWebRepository()
+	webRepository := web_fs_repository.NewWebRepository(public.FS)
 	webService := web_service.NewWebService(webRepository)
 	webTransportHTTP := web_transport_http.NewWebHTTPHandler(webService)
 
-	logger.Debug("intializing HTTP server")
+	logger.Debug("initializing HTTP server")
 	httpConfig := core_http_server.NewConfigMust()
 	httpServer := core_http_server.NewHTTPServer(
 		httpConfig,
@@ -92,8 +103,8 @@ func main() {
 		core_http_middleware.CORS(httpConfig.AllowedOrigins),
 		core_http_middleware.RequestID(),
 		core_http_middleware.Logger(logger),
-		core_http_middleware.Trace(),
 		core_http_middleware.Panic(),
+		core_http_middleware.Trace(),
 		core_http_middleware.BodyLimit(httpConfig.MaxBodyBytes),
 	)
 
@@ -107,8 +118,12 @@ func main() {
 	)
 	httpServer.RegisterRoutes(webTransportHTTP.Routes()...)
 	httpServer.RegisterSwagger()
+	httpServer.RegisterHealthCheck(pool.Ping)
 
 	if err := httpServer.Run(ctx); err != nil {
 		logger.Error("HTTP server run error", zap.Error(err))
+		return err
 	}
+
+	return nil
 }

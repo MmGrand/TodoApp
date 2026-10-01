@@ -7,6 +7,8 @@ import (
 	core_errors "github.com/MmGrand/TodoApp/internal/core/errors"
 )
 
+var phoneNumberPattern = regexp.MustCompile(`^\+[0-9]+$`)
+
 type User struct {
 	ID      int
 	Version int
@@ -29,7 +31,7 @@ func NewUser(
 	}
 }
 
-func NewUserUnitialized(
+func NewUserUninitialized(
 	fullName string,
 	phoneNumber *string,
 ) User {
@@ -61,9 +63,7 @@ func (u *User) Validate() error {
 			)
 		}
 
-		re := regexp.MustCompile(`^\+[0-9]+$`)
-
-		if !re.MatchString(*u.PhoneNumber) {
+		if !phoneNumberPattern.MatchString(*u.PhoneNumber) {
 			return fmt.Errorf(
 				"invalid `PhoneNumber` format: %w",
 				core_errors.ErrInvalidArgument,

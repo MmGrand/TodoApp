@@ -74,7 +74,7 @@ func (r *StatisticsRepository) GetStatistics(
 
 	var tasksAverageCompletionTime *time.Duration
 	if avgCompletionSeconds != nil {
-		avg := time.Duration(*avgCompletionSeconds * float64(time.Second)).Round(time.Second)
+		avg := time.Duration(*avgCompletionSeconds * float64(time.Second)).Round(time.Millisecond)
 		tasksAverageCompletionTime = &avg
 	}
 

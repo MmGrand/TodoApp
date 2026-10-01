@@ -108,6 +108,9 @@ definitions:
       title:
         example: Купить продукты и воду
         type: string
+      version:
+        example: 2
+        type: integer
     type: object
   internal_features_tasks_transport_http.PatchTaskResponse:
     properties:
@@ -216,6 +219,9 @@ definitions:
       phone_number:
         example: "+79998887766"
         type: string
+      version:
+        example: 3
+        type: integer
     type: object
   internal_features_users_transport_http.PatchUserResponse:
     properties:
@@ -247,7 +253,6 @@ definitions:
         example: 3
         type: integer
     type: object
-host: 127.0.0.1:5050
 info:
   contact: {}
   description: Todo Application REST-API scheme
@@ -259,7 +264,8 @@ paths:
       description: |-
         Получить статистику по задачам: количество созданных и выполненных,
         процент выполнения и среднее время выполнения.
-        Можно отфильтровать по автору и периоду создания задач; `to` должен быть позже `from`.
+        Можно отфильтровать по автору и периоду создания задач `[from, to)`; `to` должен быть позже `from`.
+        Даты трактуются в часовом поясе приложения (TIME_ZONE).
       parameters:
       - description: ID автора задач
         in: query
@@ -270,7 +276,8 @@ paths:
         in: query
         name: from
         type: string
-      - description: Конец периода (YYYY-MM-DD)
+      - description: 'Конец периода (YYYY-MM-DD), не включается: задачи, созданные
+          строго до этой даты'
         format: date
         in: query
         name: to
@@ -301,7 +308,7 @@ paths:
         in: query
         name: user_id
         type: integer
-      - description: Максимальное количество задач в ответе
+      - description: Максимальное количество задач в ответе (1–200, по умолчанию 50)
         in: query
         name: limit
         type: integer
@@ -426,6 +433,7 @@ paths:
         Обновить поля существующей задачи по её ID.
         Передаются только изменяемые поля: отсутствующее поле не меняется,
         `null` в `description` очищает описание. `title` и `completed` не могут быть `null`.
+        Обязательное поле `version` — версия задачи, которую видел клиент; если задачу уже изменили, вернётся 409.
       parameters:
       - description: ID изменяемой задачи
         in: path
@@ -468,7 +476,8 @@ paths:
     get:
       description: Получить список пользователей системы с поддержкой пагинации
       parameters:
-      - description: Максимальное количество пользователей в ответе
+      - description: Максимальное количество пользователей в ответе (1–200, по умолчанию
+          50)
         in: query
         name: limit
         type: integer
@@ -527,7 +536,8 @@ paths:
       - users
   /users/{id}:
     delete:
-      description: Удаление существующего в системе пользователя по его ID
+      description: Удаление существующего в системе пользователя по его ID вместе
+        со всеми его задачами
       parameters:
       - description: ID удаляемого пользователя
         in: path
@@ -589,6 +599,7 @@ paths:
         Обновить поля существующего пользователя по его ID.
         Передаются только изменяемые поля: отсутствующее поле не меняется,
         `null` в `phone_number` очищает номер телефона. `full_name` не может быть `null`.
+        Обязательное поле `version` — версия пользователя, которую видел клиент; если его уже изменили, вернётся 409.
       parameters:
       - description: ID изменяемого пользователя
         in: path

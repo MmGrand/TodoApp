@@ -19,7 +19,7 @@ make env-port-forward    # проброс порта 5432 для локальн�
 make todoapp-run         # приложение на :5050
 ```
 
-Или всё в Docker: `make env-up && make migrate-up && make todoapp-deploy`.
+Или всё в Docker: `make todoapp-deploy` — поднимет PostgreSQL, применит миграции и запустит приложение.
 
 ## Адреса
 
@@ -28,5 +28,6 @@ make todoapp-run         # приложение на :5050
 | Веб-интерфейс | http://localhost:5050/ |
 | API | http://localhost:5050/api/v1 |
 | Swagger | http://localhost:5050/swagger/index.html |
+| Health check | http://localhost:5050/health |
 
 Обновить Swagger-спецификацию: `make swagger-gen`.
