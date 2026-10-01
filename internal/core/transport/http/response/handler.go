@@ -11,6 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	internalErrorText = "internal server error"
+)
+
 type HTTPResponseHandler struct {
 	log *core_logger.Logger
 	rw  http.ResponseWriter
@@ -39,7 +43,7 @@ func (h *HTTPResponseHandler) HTMLResponse(html []byte) {
 	}
 }
 
-func (h HTTPResponseHandler) ErrorResponse(err error, msg string) {
+func (h *HTTPResponseHandler) ErrorResponse(err error, msg string) {
 	var (
 		statusCode int
 		logFunc    func(string, ...zap.Field)
@@ -76,7 +80,7 @@ func (h *HTTPResponseHandler) PanicResponse(p any, msg string) {
 	statusCode := http.StatusInternalServerError
 	err := fmt.Errorf("unexpected panic: %v", p)
 
-	h.log.Error(msg, zap.Error(err))
+	h.log.Error(msg, zap.Error(err), zap.Stack("stack"))
 
 	h.errorResponse(
 		statusCode,
@@ -89,6 +93,7 @@ func (h *HTTPResponseHandler) JSONResponse(
 	responseBody any,
 	statusCode int,
 ) {
+	h.rw.Header().Set("Content-Type", "application/json; charset=utf-8")
 	h.rw.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(h.rw).Encode(responseBody); err != nil {
@@ -96,13 +101,20 @@ func (h *HTTPResponseHandler) JSONResponse(
 	}
 }
 
+// errorResponse не раскрывает клиенту детали 5xx-ошибок:
+// они могут содержать внутренности БД, полный текст есть в логе.
 func (h *HTTPResponseHandler) errorResponse(
 	statusCode int,
 	err error,
 	msg string,
 ) {
+	errText := err.Error()
+	if statusCode >= http.StatusInternalServerError {
+		errText = internalErrorText
+	}
+
 	response := ErrorResponse{
-		Error:   err.Error(),
+		Error:   errText,
 		Message: msg,
 	}
 

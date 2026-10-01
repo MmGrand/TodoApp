@@ -57,6 +57,10 @@ func (r *UsersRepository) PatchUser(
 			)
 		}
 
+		if errors.Is(err, core_postgres_pool.ErrViolatesCheck) {
+			return domain.User{}, fmt.Errorf("%w: %w", core_postgres_pool.ErrViolatesCheck, core_errors.ErrInvalidArgument)
+		}
+
 		return domain.User{}, fmt.Errorf("scan error: %w", err)
 	}
 
