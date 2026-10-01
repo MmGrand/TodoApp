@@ -89,6 +89,10 @@ func NewUserPatch(
 	}
 }
 
+func (p *UserPatch) IsEmpty() bool {
+	return !p.FullName.Set && !p.PhoneNumber.Set
+}
+
 func (p *UserPatch) Validate() error {
 	if p.FullName.Set && p.FullName.Value == nil {
 		return fmt.Errorf(

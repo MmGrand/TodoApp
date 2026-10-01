@@ -12,36 +12,17 @@ import (
 )
 
 type PatchTaskRequest struct {
+	Version     int                              `json:"version" example:"2"`
 	Title       core_http_types.Nullable[string] `json:"title" swaggertype:"string" example:"Купить продукты и воду"`
 	Description core_http_types.Nullable[string] `json:"description" swaggertype:"string" example:"Молоко, хлеб, яйца, вода"`
 	Completed   core_http_types.Nullable[bool]   `json:"completed" swaggertype:"boolean" example:"true"`
 }
 
+// Validate проверяет только транспортные поля,
+// значения задачи валидирует домен при применении патча.
 func (r *PatchTaskRequest) Validate() error {
-	if r.Title.Set {
-		if r.Title.Value == nil {
-			return fmt.Errorf("`Title` can't be NULL")
-		}
-
-		titleLen := len([]rune(*r.Title.Value))
-		if titleLen < 1 || titleLen > 100 {
-			return fmt.Errorf("`Title` must be between 1 and 100 symbols")
-		}
-	}
-
-	if r.Description.Set {
-		if r.Description.Value != nil {
-			descriptionLen := len([]rune(*r.Description.Value))
-			if descriptionLen < 1 || descriptionLen > 1000 {
-				return fmt.Errorf("`Description` must be between 1 and 100 symbols")
-			}
-		}
-	}
-
-	if r.Completed.Set {
-		if r.Completed.Value == nil {
-			return fmt.Errorf("`Completed` can't be NULL")
-		}
+	if r.Version < 1 {
+		return fmt.Errorf("`version` is required and must be positive")
 	}
 
 	return nil
@@ -54,6 +35,7 @@ type PatchTaskResponse TaskDTOResponse
 // @Description Обновить поля существующей задачи по её ID.
 // @Description Передаются только изменяемые поля: отсутствующее поле не меняется,
 // @Description `null` в `description` очищает описание. `title` и `completed` не могут быть `null`.
+// @Description Обязательное поле `version` — версия задачи, которую видел клиент; если задачу уже изменили, вернётся 409.
 // @Tags tasks
 // @Accept json
 // @Produce json
@@ -92,7 +74,7 @@ func (h *TasksHTTPHandler) PatchTask(rw http.ResponseWriter, r *http.Request) {
 
 	taskPatch := taskPatchFromRequest(request)
 
-	taskDomain, err := h.tasksService.PatchTask(ctx, taskID, taskPatch)
+	taskDomain, err := h.tasksService.PatchTask(ctx, taskID, request.Version, taskPatch)
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,

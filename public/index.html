@@ -967,7 +967,7 @@ async function toggleTask(task) {
   pending.add(task.id);
   rerender();
   try {
-    upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { completed }));
+    upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { version: prev.version, completed }));
     toast(completed ? 'Задача выполнена' : 'Задача снова активна');
   } catch (err) {
     Object.assign(task, prev);
@@ -1028,7 +1028,7 @@ function openTaskModal(task) {
         if (completed !== task.completed) patch.completed = completed;
         if (!Object.keys(patch).length) return;
         try {
-          upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, patch));
+          upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { version: task.version, ...patch }));
         } catch (err) {
           if (err.status === 409 || err.status === 404) { await reloadTask(task.id); rerender(); }
           throw err;
@@ -1164,7 +1164,7 @@ function openUserModal(user) {
         if ((phone || null) !== (user.phone_number ?? null)) patch.phone_number = phone || null;
         if (!Object.keys(patch).length) return;
         try {
-          upsert(store.users, await api('PATCH', `/users/${user.id}`, patch));
+          upsert(store.users, await api('PATCH', `/users/${user.id}`, { version: user.version, ...patch }));
         } catch (err) {
           if (err.status === 409) {
             try { upsert(store.users, await api('GET', `/users/${user.id}`)); rerender(); } catch {}

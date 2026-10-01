@@ -138,6 +138,10 @@ func NewTaskPatch(
 	}
 }
 
+func (p *TaskPatch) IsEmpty() bool {
+	return !p.Title.Set && !p.Description.Set && !p.Completed.Set
+}
+
 func (p *TaskPatch) Validate() error {
 	if p.Title.Set && p.Title.Value == nil {
 		return fmt.Errorf(
@@ -171,7 +175,9 @@ func (t *Task) ApplyPatch(patch TaskPatch) error {
 		tmp.Description = patch.Description.Value
 	}
 
-	if patch.Completed.Set {
+	// время выполнения меняется только при смене статуса,
+	// повторный `completed=true` не должен сдвигать `CompletedAt`
+	if patch.Completed.Set && *patch.Completed.Value != tmp.Completed {
 		tmp.Completed = *patch.Completed.Value
 
 		if tmp.Completed {
