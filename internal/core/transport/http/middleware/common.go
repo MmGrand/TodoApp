@@ -2,6 +2,7 @@ package core_http_middleware
 
 import (
 	"net/http"
+	"regexp"
 	"time"
 
 	core_logger "github.com/MmGrand/TodoApp/internal/core/logger"
@@ -14,6 +15,11 @@ const (
 	requestIDHeader = "X-Request-ID"
 )
 
+var (
+	// допустимый X-Request-ID от клиента: до 64 символов без пробелов и управляющих символов
+	requestIDPattern = regexp.MustCompile(`^[A-Za-z0-9._:-]{1,64}$`)
+)
+
 func CORS(allowedOriginsList []string) Middleware {
 	allowedOrigins := make(map[string]struct{})
 	for _, origin := range allowedOriginsList {
@@ -22,18 +28,43 @@ func CORS(allowedOriginsList []string) Middleware {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			origin := r.Header.Get("Origin")
+			// ответ зависит от Origin — кэши не должны отдавать его другим источникам
+			w.Header().Add("Vary", "Origin")
 
-			if _, ok := allowedOrigins[origin]; ok {
+			origin := r.Header.Get("Origin")
+			_, allowed := allowedOrigins[origin]
+
+			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+				w.Header().Set("Access-Control-Expose-Headers", requestIDHeader)
 			}
 
-			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusOK)
+			isPreflight := r.Method == http.MethodOptions &&
+				r.Header.Get("Access-Control-Request-Method") != ""
+
+			if isPreflight {
+				if !allowed {
+					w.WriteHeader(http.StatusForbidden)
+					return
+				}
+
+				w.Header().Add("Vary", "Access-Control-Request-Method")
+				w.Header().Add("Vary", "Access-Control-Request-Headers")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, "+requestIDHeader)
+				w.WriteHeader(http.StatusNoContent)
 				return
 			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func BodyLimit(maxBytes int64) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
 
 			next.ServeHTTP(w, r)
 		})
@@ -44,7 +75,7 @@ func RequestID() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			requestID := r.Header.Get(requestIDHeader)
-			if requestID == "" {
+			if !requestIDPattern.MatchString(requestID) {
 				requestID = uuid.NewString()
 			}
 
@@ -107,6 +138,10 @@ func Panic() Middleware {
 
 			defer func() {
 				if p := recover(); p != nil {
+					if p == http.ErrAbortHandler {
+						panic(p)
+					}
+
 					responseHandler.PanicResponse(
 						p,
 						"during handle HTTP request got unexpected panic",
