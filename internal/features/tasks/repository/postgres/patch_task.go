@@ -29,6 +29,7 @@ func (r *TasksRepository) PatchTask(
 	WHERE id =$5 AND version=$6
 	RETURNING
 		id,
+		version,
 		title,
 		description,
 		completed,

@@ -1,0 +1,1368 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todo App</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%235b5bd6'/%3E%3Cpath d='M9 16.5l4.5 4.5L23 11.5' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  try {
+    const t = localStorage.getItem('todo-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<style>
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --surface-2: #f0f1f7;
+    --surface-3: #e6e8f2;
+    --border: #e3e5ee;
+    --border-strong: #cfd3e0;
+    --text: #1b1d29;
+    --text-2: #4a4f63;
+    --muted: #7b8096;
+    --accent: #5b5bd6;
+    --accent-hover: #4a4ac4;
+    --accent-soft: #ececfd;
+    --accent-text: #4141b8;
+    --success: #1f9d6b;
+    --success-soft: #e3f6ee;
+    --danger: #d64545;
+    --danger-hover: #c13838;
+    --danger-soft: #fdeaea;
+    --warn: #b7791f;
+    --shadow-sm: 0 1px 2px rgba(20, 22, 40, .06);
+    --shadow: 0 1px 3px rgba(20, 22, 40, .06), 0 6px 20px rgba(20, 22, 40, .06);
+    --shadow-lg: 0 20px 60px rgba(20, 22, 40, .22);
+    --skeleton: linear-gradient(90deg, #eceef5 0%, #f6f7fb 50%, #eceef5 100%);
+    --avatar-l: 90%;
+    --avatar-text-l: 32%;
+    --radius: 14px;
+    --radius-sm: 10px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1117;
+      --surface: #171a23;
+      --surface-2: #1e222d;
+      --surface-3: #272c39;
+      --border: #262b37;
+      --border-strong: #353b4a;
+      --text: #eceef5;
+      --text-2: #b7bccb;
+      --muted: #858b9e;
+      --accent: #7c7cf0;
+      --accent-hover: #9090f5;
+      --accent-soft: #23244a;
+      --accent-text: #a9a9fb;
+      --success: #3ccf91;
+      --success-soft: #133326;
+      --danger: #f06a6a;
+      --danger-hover: #f58282;
+      --danger-soft: #3a1b1e;
+      --warn: #e0a84a;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+      --shadow: 0 1px 3px rgba(0, 0, 0, .35), 0 8px 24px rgba(0, 0, 0, .25);
+      --shadow-lg: 0 24px 70px rgba(0, 0, 0, .6);
+      --skeleton: linear-gradient(90deg, #1e222d 0%, #272c39 50%, #1e222d 100%);
+      --avatar-l: 24%;
+      --avatar-text-l: 80%;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1117;
+    --surface: #171a23;
+    --surface-2: #1e222d;
+    --surface-3: #272c39;
+    --border: #262b37;
+    --border-strong: #353b4a;
+    --text: #eceef5;
+    --text-2: #b7bccb;
+    --muted: #858b9e;
+    --accent: #7c7cf0;
+    --accent-hover: #9090f5;
+    --accent-soft: #23244a;
+    --accent-text: #a9a9fb;
+    --success: #3ccf91;
+    --success-soft: #133326;
+    --danger: #f06a6a;
+    --danger-hover: #f58282;
+    --danger-soft: #3a1b1e;
+    --warn: #e0a84a;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+    --shadow: 0 1px 3px rgba(0, 0, 0, .35), 0 8px 24px rgba(0, 0, 0, .25);
+    --shadow-lg: 0 24px 70px rgba(0, 0, 0, .6);
+    --skeleton: linear-gradient(90deg, #1e222d 0%, #272c39 50%, #1e222d 100%);
+    --avatar-l: 24%;
+    --avatar-text-l: 80%;
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  a { color: var(--accent-text); }
+  h1, h2, h3, p { margin: 0; }
+  mark { background: color-mix(in srgb, var(--accent) 28%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  .ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .ic.sm { width: 14px; height: 14px; }
+  .ic.lg { width: 28px; height: 28px; }
+
+  /* ---------- layout ---------- */
+  .app { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+  .sidebar {
+    position: sticky; top: 0; height: 100vh;
+    display: flex; flex-direction: column; gap: 24px;
+    padding: 22px 16px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6); color: #fff;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .logo .ic { stroke-width: 3; }
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    color: var(--text-2); text-decoration: none; font-weight: 500;
+    transition: background .15s, color .15s;
+  }
+  .nav a:hover { background: var(--surface-2); color: var(--text); }
+  .nav a.active { background: var(--accent-soft); color: var(--accent-text); }
+  .nav .nav-count { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .nav a.active .nav-count { color: var(--accent-text); }
+  .sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; }
+  .side-btn {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 10px 12px; border: 0; border-radius: var(--radius-sm);
+    background: none; color: var(--text-2); text-decoration: none; font-weight: 500; font-size: 14px;
+  }
+  .side-btn:hover { background: var(--surface-2); color: var(--text); }
+
+  .main { min-width: 0; padding: 32px 40px 48px; max-width: 1180px; width: 100%; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+  .page-head h1 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+  .page-head p { color: var(--muted); margin-top: 4px; }
+  .head-actions { display: flex; gap: 8px; }
+
+  /* ---------- controls ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 40px; padding: 0 16px; border-radius: var(--radius-sm);
+    border: 1px solid transparent; font-weight: 600; font-size: 14px; white-space: nowrap;
+    transition: background .15s, border-color .15s, transform .05s, opacity .15s;
+  }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent); }
+  .btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn.danger { background: var(--danger); color: #fff; }
+  .btn.danger:hover:not(:disabled) { background: var(--danger-hover); }
+  .btn.ghost { background: var(--surface); border-color: var(--border); color: var(--text-2); }
+  .btn.ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+  .btn.sm { height: 32px; padding: 0 12px; font-size: 13px; }
+  .btn.loading { position: relative; color: transparent !important; }
+  .btn.loading::after {
+    content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.5); border-top-color: #fff; animation: spin .7s linear infinite;
+  }
+  .btn.ghost.loading::after { border-color: var(--border-strong); border-top-color: var(--text); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .icon-btn {
+    width: 36px; height: 36px; display: inline-grid; place-items: center;
+    border-radius: 9px; border: 1px solid transparent; background: none; color: var(--muted);
+    transition: background .15s, color .15s;
+  }
+  .icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+  .icon-btn.danger:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
+  .icon-btn.bordered { border-color: var(--border); background: var(--surface); width: 40px; height: 40px; }
+  .icon-btn:disabled { opacity: .35; cursor: default; }
+  .icon-btn.spinning .ic { animation: spin .7s linear infinite; }
+
+  .input, .select, textarea.input {
+    width: 100%; height: 40px; padding: 0 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  textarea.input { height: auto; padding: 10px 12px; resize: vertical; min-height: 96px; line-height: 1.5; }
+  .select { appearance: none; padding-right: 34px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237b8096' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
+  .input:focus, .select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  input[type="date"].input { padding-right: 8px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .input:focus-visible, .select:focus-visible { outline: none; }
+
+  .search { position: relative; flex: 1 1 240px; min-width: 0; }
+  .search .ic { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .search .input { padding-left: 38px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .toolbar .select { width: auto; min-width: 180px; flex: 0 1 220px; }
+
+  .tabs { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 12px; margin-bottom: 16px; max-width: 100%; overflow-x: auto; }
+  .tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 0; background: none; padding: 7px 14px; border-radius: 9px;
+    color: var(--text-2); font-weight: 500; font-size: 14px; white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+  .tab .count { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 99px; background: var(--surface-3); color: var(--text-2); }
+  .tab.active .count { background: var(--accent-soft); color: var(--accent-text); }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip-btn {
+    height: 32px; padding: 0 12px; border-radius: 99px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-2); font-size: 13px; font-weight: 500;
+  }
+  .chip-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .chip-btn.active { background: var(--accent-soft); border-color: transparent; color: var(--accent-text); }
+
+  /* ---------- cards ---------- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+
+  .task-list { display: flex; flex-direction: column; gap: 10px; }
+  .task {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;
+    padding: 16px 16px 16px 18px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+    animation: rise .25s ease both;
+  }
+  .task:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+  @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
+  .check {
+    width: 24px; height: 24px; margin-top: 1px; border-radius: 8px;
+    border: 2px solid var(--border-strong); background: var(--surface);
+    display: grid; place-items: center; color: transparent; padding: 0;
+    transition: background .15s, border-color .15s, color .15s, transform .1s;
+  }
+  .check .ic { width: 14px; height: 14px; stroke-width: 3.2; }
+  .check:hover { border-color: var(--success); color: color-mix(in srgb, var(--success) 50%, transparent); }
+  .check:active { transform: scale(.9); }
+  .task.done .check { background: var(--success); border-color: var(--success); color: #fff; }
+  .task-body { min-width: 0; cursor: pointer; }
+  .task-title { font-size: 15px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+  .task.done .task-title { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--border-strong); }
+  .task-desc {
+    color: var(--text-2); font-size: 14px; margin-top: 4px; overflow-wrap: anywhere; white-space: pre-line;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .task.done .task-desc { color: var(--muted); }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; color: var(--muted); font-size: 13px; align-items: center; }
+  .meta > span { display: inline-flex; align-items: center; gap: 6px; }
+  .meta .ok { color: var(--success); }
+  .task-actions { display: flex; gap: 2px; opacity: .55; transition: opacity .15s; }
+  .task:hover .task-actions, .task:focus-within .task-actions { opacity: 1; }
+
+  .avatar {
+    --h: 240;
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    display: inline-grid; place-items: center; font-size: 9px; font-weight: 700;
+    line-height: 1; letter-spacing: 0; white-space: nowrap; overflow: hidden;
+    background: hsl(var(--h) 65% var(--avatar-l)); color: hsl(var(--h) 55% var(--avatar-text-l));
+  }
+  .avatar.lg { width: 48px; height: 48px; font-size: 17px; border-radius: 14px; }
+  .avatar.md { width: 32px; height: 32px; font-size: 12px; border-radius: 10px; }
+
+  .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .user-card { padding: 18px; display: flex; flex-direction: column; gap: 16px; animation: rise .25s ease both; transition: border-color .15s, box-shadow .15s; }
+  .user-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow); }
+  .user-top { display: flex; gap: 14px; align-items: center; min-width: 0; }
+  .user-top > div { min-width: 0; }
+  .user-top h3 { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-top p { color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; margin-top: 2px; }
+  .user-id { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .bar { height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+  .bar > span { display: block; height: 100%; border-radius: 99px; background: var(--success); transition: width .4s ease; }
+  .user-nums { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .user-nums b { color: var(--text); font-weight: 600; }
+  .user-actions { display: flex; gap: 6px; align-items: center; border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto; }
+  .user-actions .btn { margin-right: auto; }
+
+  .pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+  .pager-btns { display: flex; gap: 4px; align-items: center; }
+  .page-num { min-width: 36px; height: 36px; padding: 0 6px; border-radius: 9px; border: 0; background: none; color: var(--text-2); font-weight: 500; }
+  .page-num:hover { background: var(--surface-2); }
+  .page-num.active { background: var(--accent); color: #fff; }
+  .page-gap { padding: 0 4px; }
+
+  /* ---------- stats ---------- */
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; padding: 16px; margin-bottom: 20px; }
+  .filters .field { flex: 1 1 160px; margin: 0; }
+  .filters .field.user { flex-basis: 220px; }
+  .filters .chips { flex-basis: 100%; }
+  .stats-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .ring-card { grid-column: span 5; padding: 24px; display: flex; gap: 24px; align-items: center; }
+  .kpis { grid-column: span 7; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .kpi { padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .kpi-label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .kpi-icon { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+  .kpi-icon.ok { background: var(--success-soft); color: var(--success); }
+  .kpi-value { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .kpi-value small { font-size: 15px; font-weight: 600; color: var(--muted); }
+  .kpi-sub { color: var(--muted); font-size: 13px; }
+  .ring { position: relative; width: 148px; height: 148px; flex: none; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring circle { fill: none; stroke-width: 12; }
+  .ring .track { stroke: var(--surface-3); }
+  .ring .value { stroke: var(--success); stroke-linecap: round; transition: stroke-dashoffset .6s ease; }
+  .ring-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .ring-label b { font-size: 30px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .ring-label span { font-size: 12px; color: var(--muted); }
+  .ring-text h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .ring-text p { color: var(--text-2); font-size: 14px; }
+  .legend { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 13px; color: var(--text-2); }
+  .legend span { display: flex; align-items: center; gap: 8px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+  .leaders { grid-column: span 12; padding: 8px 0; }
+  .leaders-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 20px 8px; gap: 12px; flex-wrap: wrap; }
+  .leaders-head h3 { font-size: 16px; font-weight: 600; }
+  .leaders-head span { color: var(--muted); font-size: 13px; }
+  .leader {
+    display: grid; grid-template-columns: 28px minmax(0, 1.2fr) minmax(0, 2fr) 120px; gap: 14px; align-items: center;
+    padding: 10px 20px; border-top: 1px solid var(--border); cursor: pointer;
+  }
+  .leader:hover { background: var(--surface-2); }
+  .leader-rank { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .leader-name { display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 500; }
+  .leader-name > span:not(.avatar) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .leader-nums { text-align: right; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .leader-nums b { color: var(--text); font-weight: 600; }
+  .leader .bar { height: 10px; }
+
+  /* ---------- states ---------- */
+  .empty { text-align: center; padding: 56px 24px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .empty-icon { width: 64px; height: 64px; border-radius: 20px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); margin-bottom: 6px; }
+  .empty-icon.err { background: var(--danger-soft); color: var(--danger); }
+  .empty h3 { color: var(--text); font-size: 17px; font-weight: 600; }
+  .empty p { max-width: 380px; }
+  .empty .btn { margin-top: 8px; }
+  .skeleton { background: var(--skeleton); background-size: 200% 100%; animation: shimmer 1.3s ease infinite; border-radius: var(--radius); }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+  /* ---------- modal ---------- */
+  dialog#modal {
+    border: 0; padding: 0; background: transparent; color: inherit;
+    width: min(540px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: visible;
+  }
+  dialog#modal::backdrop { background: rgba(10, 12, 24, .5); backdrop-filter: blur(3px); animation: fade .15s ease; }
+  dialog#modal[open] .modal-card { animation: pop .2s cubic-bezier(.2, .9, .3, 1.2); }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+  .modal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: calc(100vh - 32px); }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 6px 24px; }
+  .modal-head h2 { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+  .modal-body { padding: 12px 24px 4px; overflow-y: auto; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px 20px; }
+  .form-error {
+    margin: 8px 24px 0; padding: 10px 12px; border-radius: var(--radius-sm);
+    background: var(--danger-soft); color: var(--danger); font-size: 14px; display: flex; gap: 8px;
+  }
+  .form-error small { display: block; opacity: .8; font-size: 12px; margin-top: 2px; overflow-wrap: anywhere; }
+  .form-error[hidden] { display: none; }
+  .confirm-text { color: var(--text-2); }
+  .confirm-text b { color: var(--text); }
+  .note { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: 13px; display: flex; gap: 8px; }
+  .note .ic { margin-top: 1px; color: var(--warn); }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .field-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text-2); }
+  .field-label i { color: var(--danger); font-style: normal; }
+  .counter { font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .counter.over { color: var(--danger); }
+  .field-hint { font-size: 12px; color: var(--muted); }
+  .field-hint:empty, .field-err:empty { display: none; }
+  .field-err { font-size: 12px; color: var(--danger); font-weight: 500; }
+  .field.invalid .input, .field.invalid .select { border-color: var(--danger); }
+  .field.invalid .field-hint { display: none; }
+
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 16px; cursor: pointer; }
+  .switch-row b { font-weight: 600; font-size: 14px; display: block; }
+  .switch-row small { color: var(--muted); font-size: 12px; }
+  .switch { position: relative; width: 42px; height: 24px; flex: none; }
+  .switch input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--surface-3); transition: background .2s; pointer-events: none; }
+  .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+  .switch input:checked + span { background: var(--success); }
+  .switch input:checked + span::after { transform: translateX(18px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .info { padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-2); }
+  .info small { display: block; color: var(--muted); font-size: 12px; }
+  .info span { font-size: 14px; font-weight: 500; }
+
+  /* ---------- toasts ---------- */
+  .toasts { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; pointer-events: none; }
+  .toast {
+    pointer-events: auto; display: flex; gap: 10px; align-items: flex-start;
+    max-width: min(380px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 12px;
+    background: var(--text); color: var(--bg); box-shadow: var(--shadow-lg); font-size: 14px;
+    animation: toast-in .25s cubic-bezier(.2, .9, .3, 1.2);
+  }
+  .toast .ic { margin-top: 1px; }
+  .toast.success .ic { color: var(--success); }
+  .toast.error .ic { color: var(--danger); }
+  .toast strong { font-weight: 600; display: block; }
+  .toast small { display: block; opacity: .7; font-size: 12px; margin-top: 2px; overflow-wrap: anywhere; }
+  .toast.out { opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 960px) {
+    .ring-card, .kpis { grid-column: span 12; }
+  }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+      position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; z-index: 20;
+      flex-direction: row; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); gap: 0;
+      border-right: 0; border-top: 1px solid var(--border);
+    }
+    .brand, .side-btn.api { display: none; }
+    .nav { flex-direction: row; flex: 1; gap: 0; }
+    .nav a, .side-btn { flex: 1; flex-direction: column; gap: 2px; padding: 6px 4px; font-size: 11px; text-align: center; justify-content: center; }
+    .nav .nav-count { display: none; }
+    .sidebar-foot { margin: 0; flex: 0 0 72px; }
+    .side-btn .label-long { display: none; }
+    .main { padding: 20px 16px 96px; }
+    .page-head h1 { font-size: 24px; }
+    .toasts { bottom: 84px; right: 16px; left: 16px; align-items: stretch; }
+    .toast { max-width: none; }
+  }
+  @media (max-width: 560px) {
+    .head-actions .btn .label { display: none; }
+    .head-actions .btn { width: 40px; padding: 0; }
+    .toolbar .select { flex: 1 1 100%; }
+    .task { grid-template-columns: auto 1fr; padding: 14px; gap: 12px; }
+    .task-actions { grid-column: 2; opacity: 1; margin-top: -6px; margin-left: -8px; }
+    .ring-card { flex-direction: column; text-align: center; }
+    .legend { align-items: center; }
+    .kpis { grid-template-columns: 1fr; }
+    .info-grid { grid-template-columns: 1fr; }
+    .leader { grid-template-columns: 22px minmax(0, 1fr) 96px; }
+    .leader .bar { display: none; }
+    .modal-foot .btn { flex: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo" id="logo"></span><span>Todo App</span></div>
+    <nav class="nav" id="nav">
+      <a href="#/tasks" data-view="tasks"><span data-icon="list"></span><span>Задачи</span><span class="nav-count" data-count="tasks"></span></a>
+      <a href="#/users" data-view="users"><span data-icon="users"></span><span>Пользователи</span><span class="nav-count" data-count="users"></span></a>
+      <a href="#/stats" data-view="stats"><span data-icon="chart"></span><span>Статистика</span></a>
+    </nav>
+    <div class="sidebar-foot">
+      <button class="side-btn" id="themeToggle" type="button"></button>
+      <a class="side-btn api" href="/swagger/index.html" target="_blank" rel="noopener"><span data-icon="external"></span><span>API документация</span></a>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="page-head">
+      <div><h1 id="pageTitle"></h1><p id="pageSub"></p></div>
+      <div class="head-actions" id="headActions"></div>
+    </header>
+    <section id="view" aria-live="polite"></section>
+  </main>
+</div>
+<dialog id="modal"></dialog>
+<div class="toasts" id="toasts" role="status"></div>
+
+<script type="module">
+/* ======================= helpers ======================= */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const runeLen = (s) => [...(s ?? '')].length;
+const plural = (n, one, few, many) => {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+  return many;
+};
+const storage = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+};
+
+const ICONS = {
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  pencil: '<path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+  trash: '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+  list: '<path d="M10 6h11M10 12h11M10 18h11"/><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M8 16v-5M13 16V8M18 16v-8"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  left: '<path d="m15 18-6-6 6-6"/>',
+  right: '<path d="m9 18 6-6-6-6"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>',
+  external: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/>',
+  alert: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  hourglass: '<path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
+  wifiOff: '<path d="M12 20h.01M8.5 16.43a5 5 0 0 1 7 0M2 8.82a15 15 0 0 1 4.17-2.65M10.66 5c4.01-.36 8.14.9 11.34 3.76M16.85 11.25a10 10 0 0 1 2.22 1.68M5 12.86a10 10 0 0 1 5.17-2.69M2 2l20 20"/>',
+};
+const icon = (name, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+
+function initials(name) {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+}
+const avatar = (u, cls = '') => u
+  ? `<span class="avatar ${cls}" style="--h:${(u.id * 47) % 360}" aria-hidden="true">${esc(initials(u.full_name))}</span>`
+  : `<span class="avatar ${cls}" style="--h:220" aria-hidden="true">?</span>`;
+
+function highlight(text, q) {
+  text = String(text ?? '');
+  if (!q) return esc(text);
+  const lower = text.toLowerCase(), ql = q.toLowerCase();
+  let out = '', i = 0, idx;
+  while ((idx = lower.indexOf(ql, i)) !== -1) {
+    out += esc(text.slice(i, idx)) + '<mark>' + esc(text.slice(idx, idx + q.length)) + '</mark>';
+    i = idx + q.length;
+  }
+  return out + esc(text.slice(i));
+}
+
+/* ---- dates & durations ---- */
+const rtf = new Intl.RelativeTimeFormat('ru', { numeric: 'auto' });
+const dtf = new Intl.DateTimeFormat('ru', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const fullDate = (iso) => iso ? dtf.format(new Date(iso)) : '—';
+function relTime(iso) {
+  const diff = (new Date(iso) - Date.now()) / 1000;
+  const abs = Math.abs(diff);
+  const units = [['year', 31536000], ['month', 2592000], ['week', 604800], ['day', 86400], ['hour', 3600], ['minute', 60]];
+  for (const [u, s] of units) if (abs >= s) return rtf.format(Math.round(diff / s), u);
+  return 'только что';
+}
+const pad = (n) => String(n).padStart(2, '0');
+const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return ymd(new Date(y, m - 1, d + n));
+}
+
+// Go time.Duration.String(): "26h30m0s", "1m30.5s", "450ms", "12µs"
+function parseGoDuration(s) {
+  if (!s) return null;
+  const units = { h: 3600, m: 60, s: 1, ms: 1e-3, us: 1e-6, 'µs': 1e-6, 'μs': 1e-6, ns: 1e-9 };
+  const re = /([\d.]+)(h|ms|m|s|us|µs|μs|ns)/g;
+  let total = 0, m, found = false;
+  while ((m = re.exec(s))) { total += parseFloat(m[1]) * units[m[2]]; found = true; }
+  return found ? total : null;
+}
+function formatDuration(sec) {
+  if (sec == null) return null;
+  if (sec < 1) return 'меньше секунды';
+  if (sec < 60) return `${Math.round(sec)} сек`;
+  const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+  const parts = [];
+  if (d) parts.push(`${d} д`);
+  if (h) parts.push(`${h} ч`);
+  if (m && !d) parts.push(`${m} мин`);
+  return parts.join(' ') || '0 мин';
+}
+
+/* ======================= API ======================= */
+class ApiError extends Error {
+  constructor(status, message, detail) { super(message); this.status = status; this.detail = detail; }
+}
+async function api(method, path, body) {
+  let res;
+  try {
+    res = await fetch('/api/v1' + path, {
+      method,
+      headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    throw new ApiError(0, 'network', String(e.message || e));
+  }
+  if (res.status === 204) return null;
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch {}
+  if (!res.ok) throw new ApiError(res.status, data?.message || res.statusText, data?.error || text);
+  return data;
+}
+async function fetchAll(path) {
+  const out = [], limit = 200;
+  for (let offset = 0; ; offset += limit) {
+    const page = (await api('GET', `${path}${path.includes('?') ? '&' : '?'}limit=${limit}&offset=${offset}`)) || [];
+    out.push(...page);
+    if (page.length < limit) return out;
+  }
+}
+function humanError(err) {
+  if (!(err instanceof ApiError) || err.status === 0) return 'Не удалось связаться с сервером';
+  const d = String(err.detail || '').toLowerCase();
+  if (d.includes('foreign key') || d.includes('23503')) return 'Есть связанные задачи — сначала удалите их';
+  switch (err.status) {
+    case 400: return 'Некорректные данные';
+    case 404: return 'Не найдено — возможно, объект уже удалён';
+    case 409: return 'Данные изменились параллельно, попробуйте ещё раз';
+    default: return 'Ошибка сервера';
+  }
+}
+
+/* ======================= store ======================= */
+const store = { users: [], tasks: [], loaded: false };
+const userById = (id) => store.users.find((u) => u.id === id);
+const tasksOf = (userId) => store.tasks.filter((t) => t.author_user_id === userId);
+function upsert(list, item) {
+  const i = list.findIndex((x) => x.id === item.id);
+  if (i === -1) list.push(item); else list[i] = item;
+}
+async function loadData() {
+  const [users, tasks] = await Promise.all([fetchAll('/users'), fetchAll('/tasks')]);
+  store.users = users;
+  store.tasks = tasks;
+  store.loaded = true;
+  updateNavCounts();
+}
+function updateNavCounts() {
+  $('[data-count="tasks"]').textContent = store.loaded ? store.tasks.filter((t) => !t.completed).length || '' : '';
+  $('[data-count="users"]').textContent = store.loaded ? store.users.length || '' : '';
+}
+
+/* ======================= UI primitives ======================= */
+function toast(message, type = 'success', detail = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `${icon(type === 'error' ? 'alert' : 'check')}<div><strong>${esc(message)}</strong>${detail ? `<small>${esc(detail)}</small>` : ''}</div>`;
+  $('#toasts').append(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 260); }, type === 'error' ? 6000 : 3000);
+}
+const toastError = (err, prefix) => toast(prefix ? `${prefix}: ${humanError(err)}` : humanError(err), 'error', String(err?.detail || '').slice(0, 180));
+
+const modal = $('#modal');
+modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+function openModal({ title, body, submit = 'Сохранить', danger = false, onSubmit, onMount }) {
+  modal.innerHTML = `
+    <form class="modal-card" novalidate>
+      <header class="modal-head"><h2>${esc(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Закрыть">${icon('x')}</button></header>
+      <div class="modal-body">${body}</div>
+      <div class="form-error" hidden></div>
+      <footer class="modal-foot">
+        <button type="button" class="btn ghost" data-close>Отмена</button>
+        <button type="submit" class="btn ${danger ? 'danger' : 'primary'}">${esc(submit)}</button>
+      </footer>
+    </form>`;
+  const form = $('form', modal);
+  $$('[data-close]', form).forEach((b) => (b.onclick = () => modal.close()));
+  $$('[data-counter]', form).forEach((input) => {
+    const counter = $(`.counter[data-for="${input.name}"]`, form);
+    const max = +input.dataset.counter;
+    const update = () => { const n = runeLen(input.value); counter.textContent = `${n}/${max}`; counter.classList.toggle('over', n > max); };
+    input.addEventListener('input', update);
+    update();
+  });
+  form.addEventListener('input', (e) => {
+    const f = e.target.closest('.field');
+    if (f) { f.classList.remove('invalid'); $('.field-err', f).textContent = ''; }
+  });
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const errBox = $('.form-error', form);
+    errBox.hidden = true;
+    const btn = $('[type=submit]', form);
+    btn.disabled = true;
+    btn.classList.add('loading');
+    try {
+      const keepOpen = (await onSubmit(form)) === false;
+      if (!keepOpen) modal.close();
+    } catch (err) {
+      errBox.innerHTML = `${icon('alert')}<div>${esc(humanError(err))}${err?.detail ? `<small>${esc(String(err.detail).slice(0, 240))}</small>` : ''}</div>`;
+      errBox.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  };
+  onMount?.(form);
+  modal.showModal();
+  $('input:not([type=checkbox]), textarea, select', form)?.focus();
+}
+function fieldError(form, name, message) {
+  const wrap = form.elements[name].closest('.field');
+  wrap.classList.add('invalid');
+  $('.field-err', wrap).textContent = message;
+}
+function field({ label, name, value = '', max, type = 'text', placeholder = '', hint = '', textarea = false, required = false }) {
+  const counter = max ? `<span class="counter" data-for="${name}"></span>` : '';
+  const common = `name="${name}" class="input" placeholder="${esc(placeholder)}" ${max ? `data-counter="${max}"` : ''}`;
+  const control = textarea
+    ? `<textarea ${common} rows="4">${esc(value)}</textarea>`
+    : `<input ${common} type="${type}" value="${esc(value)}" autocomplete="off">`;
+  return `<label class="field"><span class="field-label"><span>${label}${required ? ' <i>*</i>' : ''}</span>${counter}</span>${control}<span class="field-hint">${hint}</span><span class="field-err"></span></label>`;
+}
+function userOptions(selected, { emptyLabel } = {}) {
+  const opts = [...store.users].sort((a, b) => a.full_name.localeCompare(b.full_name, 'ru'));
+  return (emptyLabel != null ? `<option value="">${esc(emptyLabel)}</option>` : '') +
+    opts.map((u) => `<option value="${u.id}" ${String(selected) === String(u.id) ? 'selected' : ''}>${esc(u.full_name)}</option>`).join('');
+}
+function emptyState({ ico = 'inbox', title, text = '', action = '', err = false }) {
+  return `<div class="empty"><div class="empty-icon ${err ? 'err' : ''}">${icon(ico, 'lg')}</div><h3>${esc(title)}</h3>${text ? `<p>${text}</p>` : ''}${action}</div>`;
+}
+function pager(page, pages, total, from, to) {
+  if (!total) return '';
+  const info = `<span>${from}–${to} из ${total}</span>`;
+  if (pages <= 1) return `<div class="pager">${info}</div>`;
+  const nums = [];
+  for (let i = 0; i < pages; i++) {
+    if (pages <= 7 || i === 0 || i === pages - 1 || Math.abs(i - page) <= 1) nums.push(i);
+    else if (nums[nums.length - 1] !== '…') nums.push('…');
+  }
+  return `<div class="pager">${info}<div class="pager-btns">
+    <button class="icon-btn" data-page="${page - 1}" ${page === 0 ? 'disabled' : ''} aria-label="Предыдущая">${icon('left')}</button>
+    ${nums.map((n) => n === '…' ? '<span class="page-gap">…</span>' : `<button class="page-num ${n === page ? 'active' : ''}" data-page="${n}">${n + 1}</button>`).join('')}
+    <button class="icon-btn" data-page="${page + 1}" ${page >= pages - 1 ? 'disabled' : ''} aria-label="Следующая">${icon('right')}</button>
+  </div></div>`;
+}
+function headButtons(primary) {
+  return `<button class="icon-btn bordered" data-head="refresh" title="Обновить данные" aria-label="Обновить">${icon('refresh')}</button>` +
+    (primary ? `<button class="btn primary" data-head="${primary.act}">${icon('plus')}<span class="label">${esc(primary.label)}</span></button>` : '');
+}
+
+/* ======================= theme ======================= */
+const root = document.documentElement;
+const darkMq = matchMedia('(prefers-color-scheme: dark)');
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : darkMq.matches;
+function renderThemeToggle() {
+  const dark = isDark();
+  $('#themeToggle').innerHTML = `${icon(dark ? 'sun' : 'moon')}<span>${dark ? 'Светлая' : 'Тёмная'}<span class="label-long"> тема</span></span>`;
+}
+$('#themeToggle').onclick = () => {
+  const next = isDark() ? 'light' : 'dark';
+  root.dataset.theme = next;
+  storage.set('todo-theme', next);
+  renderThemeToggle();
+};
+darkMq.addEventListener('change', renderThemeToggle);
+
+/* ======================= router ======================= */
+const VIEWS = {
+  tasks: { title: 'Задачи', sub: 'Планируйте, отмечайте и редактируйте задачи', render: renderTasks },
+  users: { title: 'Пользователи', sub: 'Авторы задач и их прогресс', render: renderUsers },
+  stats: { title: 'Статистика', sub: 'Сколько задач создано и выполнено, и как быстро', render: renderStats },
+};
+let currentView = 'tasks';
+const view = $('#view');
+
+function parseHash() {
+  const h = location.hash.replace(/^#\/?/, '');
+  const [p, q = ''] = h.split('?');
+  return { name: VIEWS[p] ? p : 'tasks', params: new URLSearchParams(q) };
+}
+async function router() {
+  const { name, params } = parseHash();
+  currentView = name;
+  $$('#nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === name));
+  $('#pageTitle').textContent = VIEWS[name].title;
+  $('#pageSub').textContent = VIEWS[name].sub;
+  document.title = `${VIEWS[name].title} · Todo App`;
+  if (!store.loaded) {
+    $('#headActions').innerHTML = '';
+    view.innerHTML = `<div class="task-list">${'<div class="skeleton" style="height:84px"></div>'.repeat(4)}</div>`;
+    try {
+      await loadData();
+    } catch (err) {
+      view.innerHTML = emptyState({
+        ico: 'wifiOff', err: true, title: 'Не удалось загрузить данные',
+        text: esc(humanError(err)) + (err.detail ? `<br><small>${esc(String(err.detail).slice(0, 200))}</small>` : ''),
+        action: `<button class="btn primary" data-retry>${icon('refresh')}Повторить</button>`,
+      });
+      $('[data-retry]', view).onclick = router;
+      return;
+    }
+  }
+  VIEWS[name].render(params);
+}
+const rerender = () => { updateNavCounts(); VIEWS[currentView].render(new URLSearchParams()); };
+
+$('#headActions').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-head]');
+  if (!btn) return;
+  const act = btn.dataset.head;
+  if (act === 'refresh') {
+    btn.classList.add('spinning');
+    btn.disabled = true;
+    try { await loadData(); rerender(); toast('Данные обновлены'); }
+    catch (err) { toastError(err, 'Не удалось обновить'); }
+    finally { btn.classList.remove('spinning'); btn.disabled = false; }
+  } else if (act === 'new-task') openTaskModal();
+  else if (act === 'new-user') openUserModal();
+});
+
+/* ======================= TASKS ======================= */
+const ts = { author: '', status: 'all', q: '', sort: 'new', page: 0, size: 10 };
+const pending = new Set();
+
+function renderTasks(params) {
+  if (params?.has('user')) {
+    ts.author = params.get('user');
+    ts.page = 0;
+    history.replaceState(null, '', '#/tasks');
+  }
+  if (ts.author && !userById(+ts.author)) ts.author = '';
+  $('#headActions').innerHTML = headButtons({ act: 'new-task', label: 'Новая задача' });
+
+  if (!store.users.length) {
+    view.innerHTML = emptyState({
+      ico: 'user', title: 'Сначала добавьте пользователя',
+      text: 'У каждой задачи есть автор. Создайте хотя бы одного пользователя, чтобы начать.',
+      action: `<button class="btn primary" data-empty="new-user">${icon('plus')}Новый пользователь</button>`,
+    });
+    $('[data-empty]', view).onclick = () => openUserModal();
+    return;
+  }
+
+  view.innerHTML = `
+    <div class="toolbar">
+      <div class="search">${icon('search')}<input class="input" id="tq" type="search" placeholder="Поиск по названию и описанию" value="${esc(ts.q)}"></div>
+      <select class="select" id="tauthor" aria-label="Автор">${userOptions(ts.author, { emptyLabel: 'Все авторы' })}</select>
+      <select class="select" id="tsort" aria-label="Сортировка">
+        <option value="new" ${ts.sort === 'new' ? 'selected' : ''}>Сначала новые</option>
+        <option value="old" ${ts.sort === 'old' ? 'selected' : ''}>Сначала старые</option>
+        <option value="active" ${ts.sort === 'active' ? 'selected' : ''}>Сначала активные</option>
+      </select>
+    </div>
+    <div class="tabs" role="tablist" id="ttabs"></div>
+    <div id="tlist"></div>
+    <div id="tpager"></div>`;
+
+  $('#tq').addEventListener('input', (e) => { ts.q = e.target.value; ts.page = 0; updateTaskList(); });
+  $('#tauthor').addEventListener('change', (e) => { ts.author = e.target.value; ts.page = 0; updateTaskList(); });
+  $('#tsort').addEventListener('change', (e) => { ts.sort = e.target.value; ts.page = 0; updateTaskList(); });
+  $('#ttabs').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-status]');
+    if (b) { ts.status = b.dataset.status; ts.page = 0; updateTaskList(); }
+  });
+  $('#tpager').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-page]');
+    if (b && !b.disabled) { ts.page = +b.dataset.page; updateTaskList(); view.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+  $('#tlist').addEventListener('click', onTaskClick);
+  updateTaskList();
+}
+
+function updateTaskList() {
+  let list = store.tasks;
+  if (ts.author) list = list.filter((t) => t.author_user_id === +ts.author);
+  const q = ts.q.trim().toLowerCase();
+  if (q) list = list.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
+  const counts = { all: list.length, active: list.filter((t) => !t.completed).length, done: list.filter((t) => t.completed).length };
+  if (ts.status === 'active') list = list.filter((t) => !t.completed);
+  if (ts.status === 'done') list = list.filter((t) => t.completed);
+  list = [...list].sort((a, b) => {
+    if (ts.sort === 'active' && a.completed !== b.completed) return a.completed ? 1 : -1;
+    return ts.sort === 'old' ? a.id - b.id : b.id - a.id;
+  });
+
+  $('#ttabs').innerHTML = [['all', 'Все'], ['active', 'Активные'], ['done', 'Выполненные']]
+    .map(([k, label]) => `<button class="tab ${ts.status === k ? 'active' : ''}" role="tab" aria-selected="${ts.status === k}" data-status="${k}">${label}<span class="count">${counts[k]}</span></button>`)
+    .join('');
+
+  const pages = Math.max(1, Math.ceil(list.length / ts.size));
+  ts.page = Math.min(Math.max(0, ts.page), pages - 1);
+  const start = ts.page * ts.size;
+  const slice = list.slice(start, start + ts.size);
+
+  if (!slice.length) {
+    const filtered = q || ts.author || ts.status !== 'all';
+    $('#tlist').innerHTML = filtered
+      ? emptyState({ ico: 'search', title: 'Ничего не найдено', text: 'Попробуйте изменить фильтры или поисковый запрос.' })
+      : emptyState({ ico: 'inbox', title: 'Задач пока нет', text: 'Создайте первую задачу — она появится здесь.', action: `<button class="btn primary" data-act="create">${icon('plus')}Новая задача</button>` });
+  } else {
+    $('#tlist').innerHTML = `<div class="task-list">${slice.map((t) => taskCard(t, q)).join('')}</div>`;
+  }
+  $('#tpager').innerHTML = pager(ts.page, pages, list.length, start + 1, start + slice.length);
+}
+
+function taskCard(t, q) {
+  const u = userById(t.author_user_id);
+  return `
+  <article class="task ${t.completed ? 'done' : ''}" data-id="${t.id}">
+    <button class="check" data-act="toggle" aria-pressed="${t.completed}" aria-label="${t.completed ? 'Отметить как невыполненную' : 'Отметить как выполненную'}" ${pending.has(t.id) ? 'disabled' : ''}>${icon('check')}</button>
+    <div class="task-body" data-act="edit">
+      <h3 class="task-title">${highlight(t.title, q)}</h3>
+      ${t.description ? `<p class="task-desc">${highlight(t.description, q)}</p>` : ''}
+      <div class="meta">
+        <span>${avatar(u)}${esc(u ? u.full_name : `Пользователь #${t.author_user_id}`)}</span>
+        <span title="Создана ${esc(fullDate(t.created_at))}">${icon('calendar', 'sm')}${esc(relTime(t.created_at))}</span>
+        ${t.completed && t.completed_at ? `<span class="ok" title="Выполнена ${esc(fullDate(t.completed_at))}">${icon('check', 'sm')}Выполнена ${esc(relTime(t.completed_at))}</span>` : ''}
+      </div>
+    </div>
+    <div class="task-actions">
+      <button class="icon-btn" data-act="edit" aria-label="Редактировать" title="Редактировать">${icon('pencil')}</button>
+      <button class="icon-btn danger" data-act="delete" aria-label="Удалить" title="Удалить">${icon('trash')}</button>
+    </div>
+  </article>`;
+}
+
+function onTaskClick(e) {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  if (el.dataset.act === 'create') return openTaskModal();
+  const id = +el.closest('[data-id]').dataset.id;
+  const task = store.tasks.find((t) => t.id === id);
+  if (!task) return;
+  if (el.dataset.act === 'toggle') toggleTask(task);
+  if (el.dataset.act === 'edit') openTaskModal(task);
+  if (el.dataset.act === 'delete') deleteTask(task);
+}
+
+async function reloadTask(id) {
+  try {
+    upsert(store.tasks, await api('GET', `/tasks/${id}`));
+  } catch (err) {
+    if (err.status === 404) store.tasks = store.tasks.filter((t) => t.id !== id);
+  }
+}
+
+async function toggleTask(task) {
+  if (pending.has(task.id)) return;
+  const prev = { ...task };
+  const completed = !task.completed;
+  Object.assign(task, { completed, completed_at: completed ? new Date().toISOString() : null });
+  pending.add(task.id);
+  rerender();
+  try {
+    upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, { completed }));
+    toast(completed ? 'Задача выполнена' : 'Задача снова активна');
+  } catch (err) {
+    Object.assign(task, prev);
+    if (err.status === 409 || err.status === 404) await reloadTask(task.id);
+    toastError(err, 'Не удалось изменить статус');
+  } finally {
+    pending.delete(task.id);
+    rerender();
+  }
+}
+
+function openTaskModal(task) {
+  const isEdit = !!task;
+  const author = isEdit ? userById(task.author_user_id) : null;
+  const defaultAuthor = ts.author || (store.users.length === 1 ? store.users[0].id : '');
+  const body = `
+    ${isEdit ? `
+      <div class="info-grid">
+        <div class="info"><small>Автор</small><span>${esc(author ? author.full_name : `#${task.author_user_id}`)}</span></div>
+        <div class="info"><small>ID / версия</small><span>#${task.id} · v${task.version}</span></div>
+        <div class="info"><small>Создана</small><span>${esc(fullDate(task.created_at))}</span></div>
+        <div class="info"><small>Выполнена</small><span>${esc(task.completed_at ? fullDate(task.completed_at) : '—')}</span></div>
+      </div>` : `
+      <label class="field"><span class="field-label"><span>Автор <i>*</i></span></span>
+        <select class="select" name="author">${userOptions(defaultAuthor, { emptyLabel: 'Выберите пользователя' })}</select>
+        <span class="field-err"></span></label>`}
+    ${field({ label: 'Название', name: 'title', value: task?.title, max: 100, required: true, placeholder: 'Например, купить продукты' })}
+    ${field({ label: 'Описание', name: 'description', value: task?.description, max: 1000, textarea: true, placeholder: 'Детали, заметки, список…', hint: 'Необязательно' })}
+    ${isEdit ? `
+      <label class="switch-row"><div><b>Выполнена</b><small>Время выполнения фиксируется сервером</small></div>
+        <span class="switch"><input type="checkbox" name="completed" ${task.completed ? 'checked' : ''}><span></span></span></label>` : ''}`;
+
+  openModal({
+    title: isEdit ? 'Редактирование задачи' : 'Новая задача',
+    submit: isEdit ? 'Сохранить' : 'Создать',
+    body,
+    onSubmit: async (form) => {
+      const title = form.elements.title.value.trim();
+      const description = form.elements.description.value.trim();
+      let ok = true;
+      if (!isEdit && !form.elements.author.value) { fieldError(form, 'author', 'Выберите автора задачи'); ok = false; }
+      if (!title) { fieldError(form, 'title', 'Введите название'); ok = false; }
+      else if (runeLen(title) > 100) { fieldError(form, 'title', 'Не больше 100 символов'); ok = false; }
+      if (runeLen(description) > 1000) { fieldError(form, 'description', 'Не больше 1000 символов'); ok = false; }
+      if (!ok) return false;
+
+      if (!isEdit) {
+        const payload = { author_user_id: +form.elements.author.value, title };
+        if (description) payload.description = description;
+        const created = await api('POST', '/tasks', payload);
+        store.tasks.push(created);
+        toast('Задача создана');
+      } else {
+        const patch = {};
+        if (title !== task.title) patch.title = title;
+        if ((description || null) !== (task.description ?? null)) patch.description = description || null;
+        const completed = form.elements.completed.checked;
+        if (completed !== task.completed) patch.completed = completed;
+        if (!Object.keys(patch).length) return;
+        try {
+          upsert(store.tasks, await api('PATCH', `/tasks/${task.id}`, patch));
+        } catch (err) {
+          if (err.status === 409 || err.status === 404) { await reloadTask(task.id); rerender(); }
+          throw err;
+        }
+        toast('Изменения сохранены');
+      }
+      rerender();
+    },
+  });
+}
+
+function deleteTask(task) {
+  openModal({
+    title: 'Удалить задачу?',
+    submit: 'Удалить',
+    danger: true,
+    body: `<p class="confirm-text">Задача <b>«${esc(task.title)}»</b> будет удалена без возможности восстановления.</p>`,
+    onSubmit: async () => {
+      try {
+        await api('DELETE', `/tasks/${task.id}`);
+      } catch (err) {
+        if (err.status !== 404) throw err;
+      }
+      store.tasks = store.tasks.filter((t) => t.id !== task.id);
+      toast('Задача удалена');
+      rerender();
+    },
+  });
+}
+
+/* ======================= USERS ======================= */
+const us = { q: '', page: 0, size: 12 };
+
+function renderUsers() {
+  $('#headActions').innerHTML = headButtons({ act: 'new-user', label: 'Новый пользователь' });
+  if (!store.users.length) {
+    view.innerHTML = emptyState({
+      ico: 'users', title: 'Пользователей пока нет', text: 'Добавьте первого пользователя — от его имени можно будет создавать задачи.',
+      action: `<button class="btn primary" data-empty>${icon('plus')}Новый пользователь</button>`,
+    });
+    $('[data-empty]', view).onclick = () => openUserModal();
+    return;
+  }
+  view.innerHTML = `
+    <div class="toolbar"><div class="search">${icon('search')}<input class="input" id="uq" type="search" placeholder="Поиск по имени или телефону" value="${esc(us.q)}"></div></div>
+    <div id="ulist"></div><div id="upager"></div>`;
+  $('#uq').addEventListener('input', (e) => { us.q = e.target.value; us.page = 0; updateUserList(); });
+  $('#upager').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-page]');
+    if (b && !b.disabled) { us.page = +b.dataset.page; updateUserList(); }
+  });
+  $('#ulist').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const user = userById(+el.closest('[data-id]').dataset.id);
+    if (!user) return;
+    if (el.dataset.act === 'tasks') location.hash = `#/tasks?user=${user.id}`;
+    if (el.dataset.act === 'edit') openUserModal(user);
+    if (el.dataset.act === 'delete') deleteUser(user);
+  });
+  updateUserList();
+}
+
+function updateUserList() {
+  const q = us.q.trim().toLowerCase();
+  let list = [...store.users].sort((a, b) => a.full_name.localeCompare(b.full_name, 'ru'));
+  if (q) list = list.filter((u) => u.full_name.toLowerCase().includes(q) || (u.phone_number || '').includes(q));
+  const pages = Math.max(1, Math.ceil(list.length / us.size));
+  us.page = Math.min(Math.max(0, us.page), pages - 1);
+  const start = us.page * us.size;
+  const slice = list.slice(start, start + us.size);
+
+  $('#ulist').innerHTML = slice.length
+    ? `<div class="user-grid">${slice.map((u) => userCard(u, us.q.trim())).join('')}</div>`
+    : emptyState({ ico: 'search', title: 'Никого не нашли', text: 'Попробуйте другой запрос.' });
+  $('#upager').innerHTML = pager(us.page, pages, list.length, start + 1, start + slice.length);
+}
+
+function userCard(u, q) {
+  const tasks = tasksOf(u.id);
+  const done = tasks.filter((t) => t.completed).length;
+  const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+  return `
+  <article class="card user-card" data-id="${u.id}">
+    <div class="user-top">
+      ${avatar(u, 'lg')}
+      <div>
+        <h3 title="${esc(u.full_name)}">${highlight(u.full_name, q)}</h3>
+        <p>${icon('phone', 'sm')}${u.phone_number ? highlight(u.phone_number, q) : 'Телефон не указан'}</p>
+      </div>
+      <span class="user-id" style="margin-left:auto">#${u.id}</span>
+    </div>
+    <div>
+      <div class="bar" title="Выполнено ${pct}%"><span style="width:${pct}%"></span></div>
+      <div class="user-nums"><span><b>${tasks.length}</b> ${plural(tasks.length, 'задача', 'задачи', 'задач')}</span><span><b>${done}</b> выполнено · ${pct}%</span></div>
+    </div>
+    <div class="user-actions">
+      <button class="btn ghost sm" data-act="tasks">${icon('list', 'sm')}Задачи</button>
+      <button class="icon-btn" data-act="edit" aria-label="Редактировать" title="Редактировать">${icon('pencil')}</button>
+      <button class="icon-btn danger" data-act="delete" aria-label="Удалить" title="Удалить">${icon('trash')}</button>
+    </div>
+  </article>`;
+}
+
+const normalizePhone = (s) => s.replace(/[\s\-()]/g, '');
+
+function openUserModal(user) {
+  const isEdit = !!user;
+  openModal({
+    title: isEdit ? 'Редактирование пользователя' : 'Новый пользователь',
+    submit: isEdit ? 'Сохранить' : 'Создать',
+    body: `
+      ${field({ label: 'Полное имя', name: 'full_name', value: user?.full_name, max: 100, required: true, placeholder: 'Иван Иванов', hint: 'От 3 до 100 символов' })}
+      ${field({ label: 'Телефон', name: 'phone_number', value: user?.phone_number, type: 'tel', placeholder: '+79991234567', hint: 'Необязательно. Формат: «+» и от 9 до 14 цифр' })}
+      ${isEdit ? `<div class="info-grid"><div class="info"><small>ID</small><span>#${user.id}</span></div><div class="info"><small>Версия</small><span>v${user.version}</span></div></div>` : ''}`,
+    onSubmit: async (form) => {
+      const fullName = form.elements.full_name.value.trim();
+      const phone = normalizePhone(form.elements.phone_number.value);
+      let ok = true;
+      const len = runeLen(fullName);
+      if (len < 3 || len > 100) { fieldError(form, 'full_name', 'Имя должно быть от 3 до 100 символов'); ok = false; }
+      if (phone && !/^\+[0-9]{9,14}$/.test(phone)) { fieldError(form, 'phone_number', 'Телефон: «+» и от 9 до 14 цифр, например +79991234567'); ok = false; }
+      if (!ok) return false;
+
+      if (!isEdit) {
+        const payload = { full_name: fullName };
+        if (phone) payload.phone_number = phone;
+        store.users.push(await api('POST', '/users', payload));
+        toast('Пользователь создан');
+      } else {
+        const patch = {};
+        if (fullName !== user.full_name) patch.full_name = fullName;
+        if ((phone || null) !== (user.phone_number ?? null)) patch.phone_number = phone || null;
+        if (!Object.keys(patch).length) return;
+        try {
+          upsert(store.users, await api('PATCH', `/users/${user.id}`, patch));
+        } catch (err) {
+          if (err.status === 409) {
+            try { upsert(store.users, await api('GET', `/users/${user.id}`)); rerender(); } catch {}
+          }
+          throw err;
+        }
+        toast('Изменения сохранены');
+      }
+      rerender();
+    },
+  });
+}
+
+function deleteUser(user) {
+  const tasks = tasksOf(user.id);
+  const n = tasks.length;
+  openModal({
+    title: 'Удалить пользователя?',
+    submit: n ? `Удалить вместе с задачами (${n})` : 'Удалить',
+    danger: true,
+    body: `<p class="confirm-text">Пользователь <b>${esc(user.full_name)}</b> будет удалён без возможности восстановления.</p>
+      ${n ? `<div class="note">${icon('alert')}<span>У пользователя ${n} ${plural(n, 'задача', 'задачи', 'задач')}. Пользователя с задачами удалить нельзя, поэтому сначала будут удалены все его задачи.</span></div>` : ''}`,
+    onSubmit: async () => {
+      try {
+        for (const t of tasks) {
+          try { await api('DELETE', `/tasks/${t.id}`); } catch (err) { if (err.status !== 404) throw err; }
+          store.tasks = store.tasks.filter((x) => x.id !== t.id);
+        }
+        try { await api('DELETE', `/users/${user.id}`); } catch (err) { if (err.status !== 404) throw err; }
+      } catch (err) {
+        rerender();
+        throw err;
+      }
+      store.users = store.users.filter((u) => u.id !== user.id);
+      if (ts.author === String(user.id)) ts.author = '';
+      toast('Пользователь удалён');
+      rerender();
+    },
+  });
+}
+
+/* ======================= STATS ======================= */
+const ss = { user: '', from: '', to: '', preset: 'all' };
+let statsReq = 0;
+
+function presetRange(p) {
+  const today = ymd(new Date());
+  if (p === '7') return [addDays(today, -6), today];
+  if (p === '30') return [addDays(today, -29), today];
+  if (p === 'month') return [today.slice(0, 8) + '01', today];
+  return ['', ''];
+}
+
+function renderStats() {
+  $('#headActions').innerHTML = headButtons(null);
+  if (ss.user && !userById(+ss.user)) ss.user = '';
+  view.innerHTML = `
+    <div class="card filters">
+      <label class="field user"><span class="field-label">Пользователь</span>
+        <select class="select" id="suser">${userOptions(ss.user, { emptyLabel: 'Все пользователи' })}</select></label>
+      <label class="field"><span class="field-label">С даты</span><input class="input" type="date" id="sfrom" value="${ss.from}"></label>
+      <label class="field"><span class="field-label">По дату (включительно)</span><input class="input" type="date" id="sto" value="${ss.to}"></label>
+      <div class="chips" id="spresets">
+        ${[['all', 'Всё время'], ['7', '7 дней'], ['30', '30 дней'], ['month', 'Этот месяц']]
+          .map(([k, l]) => `<button class="chip-btn ${ss.preset === k ? 'active' : ''}" data-preset="${k}">${l}</button>`).join('')}
+      </div>
+    </div>
+    <div id="sbody"></div>`;
+
+  $('#suser').addEventListener('change', (e) => { ss.user = e.target.value; loadStats(); });
+  const onDate = () => {
+    ss.from = $('#sfrom').value;
+    ss.to = $('#sto').value;
+    ss.preset = '';
+    $$('#spresets .chip-btn').forEach((b) => b.classList.remove('active'));
+    loadStats();
+  };
+  $('#sfrom').addEventListener('change', onDate);
+  $('#sto').addEventListener('change', onDate);
+  $('#spresets').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-preset]');
+    if (!b) return;
+    ss.preset = b.dataset.preset;
+    [ss.from, ss.to] = presetRange(ss.preset);
+    $('#sfrom').value = ss.from;
+    $('#sto').value = ss.to;
+    $$('#spresets .chip-btn').forEach((x) => x.classList.toggle('active', x === b));
+    loadStats();
+  });
+  $('#sbody').addEventListener('click', (e) => {
+    const row = e.target.closest('[data-user]');
+    if (row) { ss.user = row.dataset.user; $('#suser').value = ss.user; loadStats(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  });
+  loadStats();
+}
+
+function statsQuery(userId) {
+  const p = new URLSearchParams();
+  if (userId) p.set('user_id', userId);
+  if (ss.from) p.set('from', ss.from);
+  // API treats `to` as an exclusive bound; the UI date is inclusive.
+  if (ss.to) p.set('to', addDays(ss.to, 1));
+  const s = p.toString();
+  return '/statistics' + (s ? '?' + s : '');
+}
+
+async function loadStats() {
+  const body = $('#sbody');
+  if (ss.from && ss.to && ss.to < ss.from) {
+    body.innerHTML = `<div class="card">${emptyState({ ico: 'calendar', err: true, title: 'Некорректный период', text: 'Дата окончания не может быть раньше даты начала.' })}</div>`;
+    return;
+  }
+  const req = ++statsReq;
+  body.innerHTML = `<div class="stats-grid">
+    <div class="skeleton ring-card" style="height:196px"></div>
+    <div class="kpis">${'<div class="skeleton" style="height:90px"></div>'.repeat(4)}</div></div>`;
+
+  try {
+    const leaderUsers = ss.user ? [] : store.users.slice(0, 50);
+    const [main, ...perUser] = await Promise.all([
+      api('GET', statsQuery(ss.user)),
+      ...leaderUsers.map((u) => api('GET', statsQuery(u.id)).then((s) => ({ u, s })).catch(() => null)),
+    ]);
+    if (req !== statsReq) return;
+    body.innerHTML = statsMarkup(main, perUser.filter(Boolean));
+  } catch (err) {
+    if (req !== statsReq) return;
+    body.innerHTML = `<div class="card">${emptyState({ ico: 'alert', err: true, title: 'Не удалось загрузить статистику', text: esc(humanError(err)) })}</div>`;
+  }
+}
+
+function statsMarkup(s, leaders) {
+  const created = s.tasks_created || 0;
+  const done = s.tasks_completed || 0;
+  const rate = s.tasks_completed_rate;
+  const pct = rate == null ? 0 : Math.round(rate * 10) / 10;
+  const avg = formatDuration(parseGoDuration(s.tasks_average_completion_time));
+  const C = 2 * Math.PI * 58;
+  const who = ss.user ? esc(userById(+ss.user)?.full_name || '') : 'всех пользователей';
+  const period = ss.from || ss.to
+    ? `за период ${ss.from ? 'с ' + ss.from.split('-').reverse().join('.') : ''} ${ss.to ? 'по ' + ss.to.split('-').reverse().join('.') : ''}`
+    : 'за всё время';
+
+  if (!created) {
+    return `<div class="card">${emptyState({ ico: 'chart', title: 'Нет данных', text: `Для ${who} ${period} задач не найдено.` })}</div>`;
+  }
+
+  leaders.sort((a, b) => b.s.tasks_completed - a.s.tasks_completed || b.s.tasks_created - a.s.tasks_created);
+  const shown = leaders.filter((l) => l.s.tasks_created > 0);
+  const maxCreated = Math.max(1, ...shown.map((l) => l.s.tasks_created));
+
+  return `
+  <div class="stats-grid">
+    <div class="card ring-card">
+      <div class="ring" role="img" aria-label="Выполнено ${pct}%">
+        <svg viewBox="0 0 140 140"><circle class="track" cx="70" cy="70" r="58"/><circle class="value" cx="70" cy="70" r="58" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct / 100)}"/></svg>
+        <div class="ring-label"><b>${pct}%</b><span>выполнено</span></div>
+      </div>
+      <div class="ring-text">
+        <h3>Процент выполнения</h3>
+        <p>Для ${who} ${period}.</p>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--success)"></i>Выполнено — ${done}</span>
+          <span><i class="dot" style="background:var(--surface-3)"></i>Активные — ${created - done}</span>
+        </div>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="card kpi"><span class="kpi-label"><span class="kpi-icon">${icon('list', 'sm')}</span>Создано задач</span><span class="kpi-value">${created}</span></div>
+      <div class="card kpi"><span class="kpi-label"><span class="kpi-icon ok">${icon('check', 'sm')}</span>Выполнено</span><span class="kpi-value">${done}</span></div>
+      <div class="card kpi"><span class="kpi-label"><span class="kpi-icon">${icon('target', 'sm')}</span>В работе</span><span class="kpi-value">${created - done}</span></div>
+      <div class="card kpi"><span class="kpi-label"><span class="kpi-icon">${icon('hourglass', 'sm')}</span>Среднее время выполнения</span>
+        <span class="kpi-value" title="${esc(s.tasks_average_completion_time || '')}">${avg ? esc(avg) : '—'}</span>
+        ${avg ? '' : '<span class="kpi-sub">Пока нет выполненных задач</span>'}</div>
+    </div>
+    ${shown.length > 1 ? `
+    <div class="card leaders">
+      <div class="leaders-head"><h3>По пользователям</h3><span>Длина полосы — созданные задачи, заливка — выполненные</span></div>
+      ${shown.map((l, i) => {
+        const c = l.s.tasks_created, d = l.s.tasks_completed;
+        return `<div class="leader" data-user="${l.u.id}" title="${esc(l.u.full_name)}: ${d} из ${c} выполнено">
+          <span class="leader-rank">${i + 1}</span>
+          <span class="leader-name">${avatar(l.u, 'md')}<span>${esc(l.u.full_name)}</span></span>
+          <div class="bar" style="width:${(c / maxCreated) * 100}%"><span style="width:${(d / c) * 100}%"></span></div>
+          <span class="leader-nums"><b>${d}</b> / ${c} · ${Math.round(l.s.tasks_completed_rate ?? 0)}%</span>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  </div>`;
+}
+
+/* ======================= boot ======================= */
+$('#logo').innerHTML = icon('check');
+$$('[data-icon]').forEach((el) => (el.outerHTML = icon(el.dataset.icon)));
+renderThemeToggle();
+window.addEventListener('hashchange', router);
+if (!location.hash) history.replaceState(null, '', '#/tasks');
+router();
+</script>
+</body>
+</html>
