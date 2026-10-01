@@ -17,8 +17,6 @@ type PatchUserRequest struct {
 	PhoneNumber core_http_types.Nullable[string] `json:"phone_number" swaggertype:"string" example:"+79998887766"`
 }
 
-// Validate проверяет только транспортные поля,
-// значения пользователя валидирует домен при применении патча.
 func (r *PatchUserRequest) Validate() error {
 	if r.Version < 1 {
 		return fmt.Errorf("`version` is required and must be positive")

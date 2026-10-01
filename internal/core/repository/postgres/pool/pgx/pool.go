@@ -20,7 +20,6 @@ func NewPool(
 	ctx context.Context,
 	config Config,
 ) (*Pool, error) {
-	// url.URL экранирует спецсимволы в логине, пароле и имени БД
 	connectionURL := url.URL{
 		Scheme:   "postgres",
 		User:     url.UserPassword(config.User, config.Password),

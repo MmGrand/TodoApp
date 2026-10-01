@@ -43,8 +43,6 @@ services:
       retries: 10
     restart: always
 
-  # по умолчанию применяет миграции (используется при `make todoapp-deploy`);
-  # make migrate-* переопределяют команду через `docker compose run`
   todoapp-postgres-migrate:
     image: migrate/migrate:v4.19.1
     volumes:

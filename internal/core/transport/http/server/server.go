@@ -73,7 +73,6 @@ func (s *HTTPServer) RegisterSwagger() {
 	)
 }
 
-// RegisterHealthCheck регистрирует GET /health: 200, если check прошёл, иначе 503.
 func (s *HTTPServer) RegisterHealthCheck(check func(ctx context.Context) error) {
 	const checkTimeout = 2 * time.Second
 

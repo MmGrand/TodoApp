@@ -16,7 +16,6 @@ const (
 )
 
 var (
-	// допустимый X-Request-ID от клиента: до 64 символов без пробелов и управляющих символов
 	requestIDPattern = regexp.MustCompile(`^[A-Za-z0-9._:-]{1,64}$`)
 )
 
@@ -28,7 +27,6 @@ func CORS(allowedOriginsList []string) Middleware {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// ответ зависит от Origin — кэши не должны отдавать его другим источникам
 			w.Header().Add("Vary", "Origin")
 
 			origin := r.Header.Get("Origin")

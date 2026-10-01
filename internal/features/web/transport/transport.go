@@ -25,7 +25,6 @@ func NewWebHTTPHandler(
 func (h *WebHTTPHandler) Routes() []core_http_server.Route {
 	return []core_http_server.Route{
 		{
-			// `{$}` — только корень, иначе "/" перехватывает все неизвестные пути
 			Method:  http.MethodGet,
 			Path:    "/{$}",
 			Handler: h.GetMainPage,

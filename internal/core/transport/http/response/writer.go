@@ -23,8 +23,6 @@ func (rw *ResponseWriter) WriteHeader(statusCode int) {
 	rw.statusCode = statusCode
 }
 
-// Unwrap позволяет http.ResponseController добраться до исходного writer
-// (Flush, SetWriteDeadline и т.п.).
 func (rw *ResponseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }

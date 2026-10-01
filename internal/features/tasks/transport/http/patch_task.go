@@ -18,8 +18,6 @@ type PatchTaskRequest struct {
 	Completed   core_http_types.Nullable[bool]   `json:"completed" swaggertype:"boolean" example:"true"`
 }
 
-// Validate проверяет только транспортные поля,
-// значения задачи валидирует домен при применении патча.
 func (r *PatchTaskRequest) Validate() error {
 	if r.Version < 1 {
 		return fmt.Errorf("`version` is required and must be positive")

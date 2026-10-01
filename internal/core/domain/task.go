@@ -175,8 +175,6 @@ func (t *Task) ApplyPatch(patch TaskPatch) error {
 		tmp.Description = patch.Description.Value
 	}
 
-	// время выполнения меняется только при смене статуса,
-	// повторный `completed=true` не должен сдвигать `CompletedAt`
 	if patch.Completed.Set && *patch.Completed.Value != tmp.Completed {
 		tmp.Completed = *patch.Completed.Value
 

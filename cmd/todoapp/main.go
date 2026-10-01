@@ -53,8 +53,6 @@ func main() {
 	}
 }
 
-// run возвращает ошибку вместо logger.Fatal, чтобы отложенные
-// закрытия ресурсов (пул соединений) выполнялись до выхода.
 func run(logger *core_logger.Logger) error {
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),

@@ -16,8 +16,6 @@ type Pagination struct {
 	Offset int
 }
 
-// NewPagination подставляет значения по умолчанию и проверяет границы,
-// чтобы запрос без `limit` не выгружал всю таблицу.
 func NewPagination(limit *int, offset *int) (Pagination, error) {
 	pagination := Pagination{
 		Limit:  DefaultPaginationLimit,

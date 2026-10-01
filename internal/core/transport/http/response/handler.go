@@ -101,8 +101,6 @@ func (h *HTTPResponseHandler) JSONResponse(
 	}
 }
 
-// errorResponse не раскрывает клиенту детали 5xx-ошибок:
-// они могут содержать внутренности БД, полный текст есть в логе.
 func (h *HTTPResponseHandler) errorResponse(
 	statusCode int,
 	err error,

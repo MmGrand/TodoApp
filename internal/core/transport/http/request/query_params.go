@@ -37,7 +37,6 @@ func GetDateQueryParam(r *http.Request, key string) (*time.Time, error) {
 
 	layout := "2006-01-02"
 
-	// дата без времени трактуется в часовом поясе приложения (TIME_ZONE)
 	date, err := time.ParseInLocation(layout, param, time.Local)
 	if err != nil {
 		return nil, fmt.Errorf(
