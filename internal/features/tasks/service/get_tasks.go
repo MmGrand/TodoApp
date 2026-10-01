@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/MmGrand/TodoApp/internal/core/domain"
-	core_errors "github.com/MmGrand/TodoApp/internal/core/errors"
 )
 
 func (s *TasksService) GetTasks(
@@ -14,25 +13,16 @@ func (s *TasksService) GetTasks(
 	limit *int,
 	offset *int,
 ) ([]domain.Task, error) {
-	if limit != nil && *limit < 0 {
-		return nil, fmt.Errorf(
-			"limit must be non-negative: %w",
-			core_errors.ErrInvalidArgument,
-		)
-	}
-
-	if offset != nil && *offset < 0 {
-		return nil, fmt.Errorf(
-			"offset must be non-negative: %w",
-			core_errors.ErrInvalidArgument,
-		)
+	pagination, err := domain.NewPagination(limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("pagination: %w", err)
 	}
 
 	tasks, err := s.tasksRepository.GetTasks(
 		ctx,
 		userID,
-		limit,
-		offset,
+		&pagination.Limit,
+		&pagination.Offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("get tasks from repository: %w", err)

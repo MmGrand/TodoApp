@@ -24,44 +24,10 @@ func (s *StatisticsService) GetStatistics(
 		}
 	}
 
-	tasks, err := s.statisticsRepository.GetTasks(ctx, userID, from, to)
+	statistics, err := s.statisticsRepository.GetStatistics(ctx, userID, from, to)
 	if err != nil {
-		return domain.Statistics{}, fmt.Errorf("get tasks from repository: %w", err)
+		return domain.Statistics{}, fmt.Errorf("get statistics from repository: %w", err)
 	}
-
-	statistics := calcStatistics(tasks)
 
 	return statistics, nil
-}
-
-func calcStatistics(tasks []domain.Task) domain.Statistics {
-	if len(tasks) == 0 {
-		return domain.NewStatistics(0, 0, nil, nil)
-	}
-
-	tasksCreated := len(tasks)
-	tasksCompleted := 0
-
-	var totalCompletionDuration time.Duration
-	for _, task := range tasks {
-		if task.Completed {
-			tasksCompleted++
-		}
-
-		completionDuration := task.CompletionDuration()
-		if completionDuration != nil {
-			totalCompletionDuration += *completionDuration
-		}
-	}
-
-	tasksCompletedRate := float64(tasksCompleted) / float64(tasksCreated) * 100
-
-	var tasksAverageCompletionTime *time.Duration
-	if tasksCompleted > 0 && totalCompletionDuration != 0 {
-		avg := totalCompletionDuration / time.Duration(tasksCompleted)
-
-		tasksAverageCompletionTime = &avg
-	}
-
-	return domain.NewStatistics(tasksCreated, tasksCompleted, &tasksCompletedRate, tasksAverageCompletionTime)
 }

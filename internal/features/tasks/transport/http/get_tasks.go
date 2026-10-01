@@ -17,7 +17,7 @@ type GetTasksResponse []TaskDTOResponse
 // @Tags tasks
 // @Produce json
 // @Param user_id query int false "ID автора задач"
-// @Param limit query int false "Максимальное количество задач в ответе"
+// @Param limit query int false "Максимальное количество задач в ответе (1–200, по умолчанию 50)"
 // @Param offset query int false "Количество пропускаемых задач"
 // @Success 200 {object} GetTasksResponse "Список задач"
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
