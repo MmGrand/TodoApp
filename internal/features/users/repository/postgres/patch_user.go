@@ -50,6 +50,23 @@ func (r *UsersRepository) PatchUser(
 	)
 	if err != nil {
 		if errors.Is(err, core_postgres_pool.ErrNoRows) {
+			existsQuery := `
+			SELECT EXISTS(SELECT 1 FROM todoapp.users WHERE id = $1);
+			`
+
+			var exists bool
+			if err := r.pool.QueryRow(ctx, existsQuery, id).Scan(&exists); err != nil {
+				return domain.User{}, fmt.Errorf("check user existence: %w", err)
+			}
+
+			if !exists {
+				return domain.User{}, fmt.Errorf(
+					"user with id='%d': %w",
+					id,
+					core_errors.ErrNotFound,
+				)
+			}
+
 			return domain.User{}, fmt.Errorf(
 				"user with id='%d' concurrently accessed: %w",
 				id,

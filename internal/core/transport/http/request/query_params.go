@@ -15,7 +15,7 @@ func GetIntQueryParam(r *http.Request, key string) (*int, error) {
 		return nil, nil
 	}
 
-	val, err := strconv.Atoi(param)
+	val64, err := strconv.ParseInt(param, 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"param='%s' by key='%s' not a valid integer: %v: %w",
@@ -25,6 +25,8 @@ func GetIntQueryParam(r *http.Request, key string) (*int, error) {
 			core_errors.ErrInvalidArgument,
 		)
 	}
+
+	val := int(val64)
 
 	return &val, nil
 }

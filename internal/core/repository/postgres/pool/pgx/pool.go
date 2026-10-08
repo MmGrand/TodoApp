@@ -38,7 +38,12 @@ func NewPool(
 		return nil, fmt.Errorf("create pgxpool: %w", err)
 	}
 
-	if err := pool.Ping(ctx); err != nil {
+	pingCtx, cancel := context.WithTimeout(ctx, config.Timeout)
+	defer cancel()
+
+	if err := pool.Ping(pingCtx); err != nil {
+		pool.Close()
+
 		return nil, fmt.Errorf("pgxpool ping: %w", err)
 	}
 
