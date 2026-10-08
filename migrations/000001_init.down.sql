@@ -1,3 +1,3 @@
-DROP TABLE todoapp.tasks;
-DROP TABLE todoapp.users;
-DROP SCHEMA todoapp;
+DROP TABLE IF EXISTS todoapp.tasks;
+DROP TABLE IF EXISTS todoapp.users;
+DROP SCHEMA IF EXISTS todoapp;

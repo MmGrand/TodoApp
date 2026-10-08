@@ -23,6 +23,11 @@ type TasksRepository interface {
 		offset *int,
 	) ([]domain.Task, error)
 
+	CountTasks(
+		ctx context.Context,
+		userID *int,
+	) (int, error)
+
 	GetTask(
 		ctx context.Context,
 		id int,
@@ -31,6 +36,7 @@ type TasksRepository interface {
 	DeleteTask(
 		ctx context.Context,
 		id int,
+		version *int,
 	) error
 
 	PatchTask(

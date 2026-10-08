@@ -15,7 +15,7 @@ func GetIntQueryParam(r *http.Request, key string) (*int, error) {
 		return nil, nil
 	}
 
-	val, err := strconv.Atoi(param)
+	val64, err := strconv.ParseInt(param, 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"param='%s' by key='%s' not a valid integer: %v: %w",
@@ -26,10 +26,49 @@ func GetIntQueryParam(r *http.Request, key string) (*int, error) {
 		)
 	}
 
+	val := int(val64)
+
 	return &val, nil
 }
 
-func GetDateQueryParam(r *http.Request, key string) (*time.Time, error) {
+func GetLimitOffsetQueryParams(r *http.Request) (*int, *int, error) {
+	const (
+		limitQueryParamKey  = "limit"
+		offsetQueryParamKey = "offset"
+	)
+
+	limit, err := GetIntQueryParam(r, limitQueryParamKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("get 'limit' query param: %w", err)
+	}
+
+	offset, err := GetIntQueryParam(r, offsetQueryParamKey)
+	if err != nil {
+		return nil, nil, fmt.Errorf("get 'offset' query param: %w", err)
+	}
+
+	return limit, offset, nil
+}
+
+func GetVersionQueryParam(r *http.Request) (*int, error) {
+	const versionQueryParamKey = "version"
+
+	version, err := GetIntQueryParam(r, versionQueryParamKey)
+	if err != nil {
+		return nil, fmt.Errorf("get 'version' query param: %w", err)
+	}
+
+	if version != nil && *version < 1 {
+		return nil, fmt.Errorf(
+			"'version' must be positive: %w",
+			core_errors.ErrInvalidArgument,
+		)
+	}
+
+	return version, nil
+}
+
+func GetDateQueryParam(r *http.Request, key string, location *time.Location) (*time.Time, error) {
 	param := r.URL.Query().Get(key)
 	if param == "" {
 		return nil, nil
@@ -37,7 +76,7 @@ func GetDateQueryParam(r *http.Request, key string) (*time.Time, error) {
 
 	layout := "2006-01-02"
 
-	date, err := time.ParseInLocation(layout, param, time.Local)
+	date, err := time.ParseInLocation(layout, param, location)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"param='%s' by key='%s' not a valid date: %v: %w",

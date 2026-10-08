@@ -11,14 +11,14 @@ definitions:
     type: object
   internal_features_statistics_transport_http.GetStatisticsResponse:
     properties:
-      tasks_average_completion_time:
-        example: 26h30m0s
-        type: string
+      tasks_average_completion_seconds:
+        example: 95400.5
+        type: number
       tasks_completed:
         example: 15
         type: integer
       tasks_completed_rate:
-        example: 75
+        example: 75.25
         type: number
       tasks_created:
         example: 20
@@ -28,6 +28,8 @@ definitions:
     properties:
       author_user_id:
         example: 10
+        maximum: 2147483647
+        minimum: 1
         type: integer
       description:
         example: Молоко, хлеб, яйца
@@ -263,7 +265,7 @@ paths:
     get:
       description: |-
         Получить статистику по задачам: количество созданных и выполненных,
-        процент выполнения и среднее время выполнения.
+        процент выполнения (округлён до сотых) и среднее время выполнения в секундах.
         Можно отфильтровать по автору и периоду создания задач `[from, to)`; `to` должен быть позже `from`.
         Даты трактуются в часовом поясе приложения (TIME_ZONE).
       parameters:
@@ -321,6 +323,10 @@ paths:
       responses:
         "200":
           description: Список задач
+          headers:
+            X-Total-Count:
+              description: Общее количество задач с учётом фильтра
+              type: integer
           schema:
             items:
               $ref: '#/definitions/internal_features_tasks_transport_http.TaskDTOResponse'
@@ -371,12 +377,18 @@ paths:
       - tasks
   /tasks/{id}:
     delete:
-      description: Удаление существующей в системе задачи по её ID
+      description: |-
+        Удаление существующей в системе задачи по её ID.
+        Если передан `version` и задачу уже изменили, вернётся 409.
       parameters:
       - description: ID удаляемой задачи
         in: path
         name: id
         required: true
+        type: integer
+      - description: Версия задачи, которую видел клиент
+        in: query
+        name: version
         type: integer
       responses:
         "204":
@@ -387,6 +399,10 @@ paths:
             $ref: '#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse'
         "404":
           description: Task not found
+          schema:
+            $ref: '#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse'
+        "409":
+          description: 'Conflict: task was concurrently modified'
           schema:
             $ref: '#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse'
         "500":
@@ -490,6 +506,10 @@ paths:
       responses:
         "200":
           description: Список пользователей
+          headers:
+            X-Total-Count:
+              description: Общее количество пользователей
+              type: integer
           schema:
             items:
               $ref: '#/definitions/internal_features_users_transport_http.UserDTOResponse'
@@ -536,13 +556,18 @@ paths:
       - users
   /users/{id}:
     delete:
-      description: Удаление существующего в системе пользователя по его ID вместе
-        со всеми его задачами
+      description: |-
+        Удаление существующего в системе пользователя по его ID вместе со всеми его задачами.
+        Если передан `version` и пользователя уже изменили, вернётся 409.
       parameters:
       - description: ID удаляемого пользователя
         in: path
         name: id
         required: true
+        type: integer
+      - description: Версия пользователя, которую видел клиент
+        in: query
+        name: version
         type: integer
       responses:
         "204":
@@ -553,6 +578,10 @@ paths:
             $ref: '#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse'
         "404":
           description: User not found
+          schema:
+            $ref: '#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse'
+        "409":
+          description: 'Conflict: user was concurrently modified'
           schema:
             $ref: '#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse'
         "500":

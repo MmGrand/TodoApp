@@ -6,9 +6,19 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+const (
+	FormatConsole = "console"
+	FormatJSON    = "json"
+)
+
 type Config struct {
 	Level  string `envconfig:"LEVEL" default:"DEBUG"`
 	Folder string `envconfig:"FOLDER" required:"true"`
+	Format string `envconfig:"FORMAT" default:"console"`
+
+	MaxSizeMB  int `envconfig:"MAX_SIZE_MB" default:"100"`
+	MaxBackups int `envconfig:"MAX_BACKUPS" default:"10"`
+	MaxAgeDays int `envconfig:"MAX_AGE_DAYS" default:"30"`
 }
 
 func NewConfig() (Config, error) {
@@ -18,15 +28,14 @@ func NewConfig() (Config, error) {
 		return Config{}, fmt.Errorf("process envconfig: %w", err)
 	}
 
-	return config, nil
-}
-
-func NewConfigMust() Config {
-	config, err := NewConfig()
-	if err != nil {
-		err = fmt.Errorf("get Logger config: %w", err)
-		panic(err)
+	if config.Format != FormatConsole && config.Format != FormatJSON {
+		return Config{}, fmt.Errorf(
+			"unknown log format %q, expected %q or %q",
+			config.Format,
+			FormatConsole,
+			FormatJSON,
+		)
 	}
 
-	return config
+	return config, nil
 }

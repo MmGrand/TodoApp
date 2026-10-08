@@ -16,6 +16,7 @@ type Config struct {
 	IdleTimeout       time.Duration `envconfig:"IDLE_TIMEOUT" default:"60s"`
 	MaxBodyBytes      int64         `envconfig:"MAX_BODY_BYTES" default:"1048576"`
 	AllowedOrigins    []string      `envconfig:"ALLOWED_ORIGINS" required:"true"`
+	SwaggerEnabled    bool          `envconfig:"SWAGGER_ENABLED" default:"false"`
 }
 
 func NewConfig() (Config, error) {
@@ -26,14 +27,4 @@ func NewConfig() (Config, error) {
 	}
 
 	return config, nil
-}
-
-func NewConfigMust() Config {
-	config, err := NewConfig()
-	if err != nil {
-		err = fmt.Errorf("get HTTP server config: %w", err)
-		panic(err)
-	}
-
-	return config
 }

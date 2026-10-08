@@ -33,12 +33,33 @@ func NewPool(
 		return nil, fmt.Errorf("parse pgxconfig: %w", err)
 	}
 
+	if config.MaxConns > 0 {
+		pgxconfig.MaxConns = config.MaxConns
+	}
+
+	if config.MinConns > 0 {
+		pgxconfig.MinConns = config.MinConns
+	}
+
+	if config.MaxConnLifetime > 0 {
+		pgxconfig.MaxConnLifetime = config.MaxConnLifetime
+	}
+
+	if config.MaxConnIdleTime > 0 {
+		pgxconfig.MaxConnIdleTime = config.MaxConnIdleTime
+	}
+
 	pool, err := pgxpool.NewWithConfig(ctx, pgxconfig)
 	if err != nil {
 		return nil, fmt.Errorf("create pgxpool: %w", err)
 	}
 
-	if err := pool.Ping(ctx); err != nil {
+	pingCtx, cancel := context.WithTimeout(ctx, config.Timeout)
+	defer cancel()
+
+	if err := pool.Ping(pingCtx); err != nil {
+		pool.Close()
+
 		return nil, fmt.Errorf("pgxpool ping: %w", err)
 	}
 

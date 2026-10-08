@@ -3,6 +3,7 @@ package core_http_middleware
 import (
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	core_logger "github.com/MmGrand/TodoApp/internal/core/logger"
@@ -12,7 +13,19 @@ import (
 )
 
 const (
-	requestIDHeader = "X-Request-ID"
+	requestIDHeader  = "X-Request-ID"
+	healthPathPrefix = "/health/"
+
+	contentSecurityPolicy = "default-src 'self'; " +
+		"script-src 'self' 'unsafe-inline'; " +
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+		"font-src 'self' https://fonts.gstatic.com; " +
+		"img-src 'self' data:; " +
+		"connect-src 'self'; " +
+		"object-src 'none'; " +
+		"base-uri 'self'; " +
+		"form-action 'self'; " +
+		"frame-ancestors 'none'"
 )
 
 var (
@@ -34,7 +47,7 @@ func CORS(allowedOriginsList []string) Middleware {
 
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Expose-Headers", requestIDHeader)
+				w.Header().Set("Access-Control-Expose-Headers", requestIDHeader+", "+core_http_response.TotalCountHeader)
 			}
 
 			isPreflight := r.Method == http.MethodOptions &&
@@ -49,10 +62,26 @@ func CORS(allowedOriginsList []string) Middleware {
 				w.Header().Add("Vary", "Access-Control-Request-Method")
 				w.Header().Add("Vary", "Access-Control-Request-Headers")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, "+requestIDHeader)
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, "+requestIDHeader)
+				w.Header().Set("Access-Control-Max-Age", "600")
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func SecurityHeaders() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := w.Header()
+			h.Set("Content-Security-Policy", contentSecurityPolicy)
+			h.Set("X-Content-Type-Options", "nosniff")
+			h.Set("X-Frame-Options", "DENY")
+			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			h.Set("Cross-Origin-Opener-Policy", "same-origin")
 
 			next.ServeHTTP(w, r)
 		})
@@ -88,10 +117,10 @@ func RequestID() Middleware {
 func Logger(log *core_logger.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			RequestID := r.Header.Get(requestIDHeader)
+			requestID := r.Header.Get(requestIDHeader)
 
 			l := log.With(
-				zap.String("request_id", RequestID),
+				zap.String("request_id", requestID),
 				zap.String("url", r.URL.String()),
 			)
 
@@ -105,6 +134,12 @@ func Logger(log *core_logger.Logger) Middleware {
 func Trace() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, healthPathPrefix) {
+				next.ServeHTTP(w, r)
+
+				return
+			}
+
 			ctx := r.Context()
 			log := core_logger.FromContext(ctx)
 			rw := core_http_response.NewResponseWriter(w)
@@ -127,12 +162,10 @@ func Trace() Middleware {
 	}
 }
 
-func Panic() Middleware {
+func Panic(log *core_logger.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			log := core_logger.FromContext(ctx)
-			responseHandler := core_http_response.NewHTTPResponseHandler(log, w)
+			rw := core_http_response.NewResponseWriter(w)
 
 			defer func() {
 				if p := recover(); p != nil {
@@ -140,14 +173,28 @@ func Panic() Middleware {
 						panic(p)
 					}
 
-					responseHandler.PanicResponse(
-						p,
-						"during handle HTTP request got unexpected panic",
+					const msg = "during handle HTTP request got unexpected panic"
+
+					l := log.With(
+						zap.String("request_id", r.Header.Get(requestIDHeader)),
+						zap.String("url", r.URL.String()),
 					)
+
+					if rw.IsHeaderWritten() {
+						l.Error(
+							msg+" after response was started, aborting connection",
+							zap.Any("panic", p),
+							zap.Stack("stack"),
+						)
+
+						panic(http.ErrAbortHandler)
+					}
+
+					core_http_response.NewHTTPResponseHandler(l, rw).PanicResponse(p, msg)
 				}
 			}()
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(rw, r)
 		})
 	}
 }

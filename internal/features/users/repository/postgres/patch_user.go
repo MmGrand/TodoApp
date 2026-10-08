@@ -50,6 +50,19 @@ func (r *UsersRepository) PatchUser(
 	)
 	if err != nil {
 		if errors.Is(err, core_postgres_pool.ErrNoRows) {
+			exists, err := r.userExists(ctx, id)
+			if err != nil {
+				return domain.User{}, err
+			}
+
+			if !exists {
+				return domain.User{}, fmt.Errorf(
+					"user with id='%d': %w",
+					id,
+					core_errors.ErrNotFound,
+				)
+			}
+
 			return domain.User{}, fmt.Errorf(
 				"user with id='%d' concurrently accessed: %w",
 				id,
@@ -58,7 +71,7 @@ func (r *UsersRepository) PatchUser(
 		}
 
 		if errors.Is(err, core_postgres_pool.ErrViolatesCheck) {
-			return domain.User{}, fmt.Errorf("%w: %w", core_postgres_pool.ErrViolatesCheck, core_errors.ErrInvalidArgument)
+			return domain.User{}, fmt.Errorf("%w: %w", err, core_errors.ErrInvalidArgument)
 		}
 
 		return domain.User{}, fmt.Errorf("scan error: %w", err)

@@ -581,14 +581,6 @@ function addDays(dateStr, n) {
 }
 
 // Go time.Duration.String(): "26h30m0s", "1m30.5s", "450ms", "12µs"
-function parseGoDuration(s) {
-  if (!s) return null;
-  const units = { h: 3600, m: 60, s: 1, ms: 1e-3, us: 1e-6, 'µs': 1e-6, 'μs': 1e-6, ns: 1e-9 };
-  const re = /([\d.]+)(h|ms|m|s|us|µs|μs|ns)/g;
-  let total = 0, m, found = false;
-  while ((m = re.exec(s))) { total += parseFloat(m[1]) * units[m[2]]; found = true; }
-  return found ? total : null;
-}
 function formatDuration(sec) {
   if (sec == null) return null;
   if (sec < 1) return 'меньше секунды';
@@ -633,8 +625,6 @@ async function fetchAll(path) {
 }
 function humanError(err) {
   if (!(err instanceof ApiError) || err.status === 0) return 'Не удалось связаться с сервером';
-  const d = String(err.detail || '').toLowerCase();
-  if (d.includes('related records')) return 'Есть связанные задачи — сначала удалите их';
   switch (err.status) {
     case 400: return 'Некорректные данные';
     case 404: return 'Не найдено — возможно, объект уже удалён';
@@ -1048,7 +1038,7 @@ function deleteTask(task) {
     body: `<p class="confirm-text">Задача <b>«${esc(task.title)}»</b> будет удалена без возможности восстановления.</p>`,
     onSubmit: async () => {
       try {
-        await api('DELETE', `/tasks/${task.id}`);
+        await api('DELETE', `/tasks/${task.id}?version=${task.version}`);
       } catch (err) {
         if (err.status !== 404) throw err;
       }
@@ -1188,7 +1178,7 @@ function deleteUser(user) {
     body: `<p class="confirm-text">Пользователь <b>${esc(user.full_name)}</b> будет удалён без возможности восстановления.</p>
       ${n ? `<div class="note">${icon('alert')}<span>У пользователя ${n} ${plural(n, 'задача', 'задачи', 'задач')}, они будут удалены вместе с ним.</span></div>` : ''}`,
     onSubmit: async () => {
-      try { await api('DELETE', `/users/${user.id}`); } catch (err) { if (err.status !== 404) throw err; }
+      try { await api('DELETE', `/users/${user.id}?version=${user.version}`); } catch (err) { if (err.status !== 404) throw err; }
       store.tasks = store.tasks.filter((t) => t.author_user_id !== user.id);
       store.users = store.users.filter((u) => u.id !== user.id);
       if (ts.author === String(user.id)) ts.author = '';
@@ -1293,7 +1283,7 @@ function statsMarkup(s, leaders) {
   const done = s.tasks_completed || 0;
   const rate = s.tasks_completed_rate;
   const pct = rate == null ? 0 : Math.round(rate * 10) / 10;
-  const avg = formatDuration(parseGoDuration(s.tasks_average_completion_time));
+  const avg = formatDuration(s.tasks_average_completion_seconds);
   const C = 2 * Math.PI * 58;
   const who = ss.user ? esc(userById(+ss.user)?.full_name || '') : 'всех пользователей';
   const period = ss.from || ss.to
@@ -1329,7 +1319,7 @@ function statsMarkup(s, leaders) {
       <div class="card kpi"><span class="kpi-label"><span class="kpi-icon ok">${icon('check', 'sm')}</span>Выполнено</span><span class="kpi-value">${done}</span></div>
       <div class="card kpi"><span class="kpi-label"><span class="kpi-icon">${icon('target', 'sm')}</span>В работе</span><span class="kpi-value">${created - done}</span></div>
       <div class="card kpi"><span class="kpi-label"><span class="kpi-icon">${icon('hourglass', 'sm')}</span>Среднее время выполнения</span>
-        <span class="kpi-value" title="${esc(s.tasks_average_completion_time || '')}">${avg ? esc(avg) : '—'}</span>
+        <span class="kpi-value" title="${s.tasks_average_completion_seconds != null ? esc(`${Math.round(s.tasks_average_completion_seconds)} сек`) : ''}">${avg ? esc(avg) : '—'}</span>
         ${avg ? '' : '<span class="kpi-sub">Пока нет выполненных задач</span>'}</div>
     </div>
     ${shown.length > 1 ? `

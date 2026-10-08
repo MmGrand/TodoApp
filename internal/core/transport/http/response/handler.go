@@ -1,6 +1,7 @@
 package core_http_response
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,12 @@ import (
 )
 
 const (
-	internalErrorText = "internal server error"
+	internalErrorText       = "internal server error"
+	clientClosedRequestText = "client closed request"
+
+	statusClientClosedRequest = 499
+
+	TotalCountHeader = "X-Total-Count"
 )
 
 type HTTPResponseHandler struct {
@@ -47,33 +53,55 @@ func (h *HTTPResponseHandler) ErrorResponse(err error, msg string) {
 	var (
 		statusCode int
 		logFunc    func(string, ...zap.Field)
+		errText    string
 	)
 
 	switch {
 	case errors.Is(err, core_errors.ErrInvalidArgument):
 		statusCode = http.StatusBadRequest
 		logFunc = h.log.Warn
+		errText = publicErrorText(err, core_errors.ErrInvalidArgument)
 
 	case errors.Is(err, core_errors.ErrNotFound):
 		statusCode = http.StatusNotFound
 		logFunc = h.log.Debug
+		errText = publicErrorText(err, core_errors.ErrNotFound)
 
 	case errors.Is(err, core_errors.ErrConflict):
 		statusCode = http.StatusConflict
 		logFunc = h.log.Warn
+		errText = publicErrorText(err, core_errors.ErrConflict)
+
+	case errors.Is(err, context.Canceled):
+		statusCode = statusClientClosedRequest
+		logFunc = h.log.Debug
+		errText = clientClosedRequestText
 
 	default:
 		statusCode = http.StatusInternalServerError
 		logFunc = h.log.Error
+		errText = internalErrorText
 	}
 
 	logFunc(msg, zap.Error(err))
 
 	h.errorResponse(
 		statusCode,
-		err,
+		errText,
 		msg,
 	)
+}
+
+func publicErrorText(err error, sentinel error) string {
+	current := err
+	for {
+		next := errors.Unwrap(current)
+		if next == nil || next == sentinel {
+			return current.Error()
+		}
+
+		current = next
+	}
 }
 
 func (h *HTTPResponseHandler) PanicResponse(p any, msg string) {
@@ -84,7 +112,7 @@ func (h *HTTPResponseHandler) PanicResponse(p any, msg string) {
 
 	h.errorResponse(
 		statusCode,
-		err,
+		err.Error(),
 		msg,
 	)
 }
@@ -103,10 +131,9 @@ func (h *HTTPResponseHandler) JSONResponse(
 
 func (h *HTTPResponseHandler) errorResponse(
 	statusCode int,
-	err error,
+	errText string,
 	msg string,
 ) {
-	errText := err.Error()
 	if statusCode >= http.StatusInternalServerError {
 		errText = internalErrorText
 	}

@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/statistics": {
             "get": {
-                "description": "Получить статистику по задачам: количество созданных и выполненных,\nпроцент выполнения и среднее время выполнения.\nМожно отфильтровать по автору и периоду создания задач ` + "`" + `[from, to)` + "`" + `; ` + "`" + `to` + "`" + ` должен быть позже ` + "`" + `from` + "`" + `.\nДаты трактуются в часовом поясе приложения (TIME_ZONE).",
+                "description": "Получить статистику по задачам: количество созданных и выполненных,\nпроцент выполнения (округлён до сотых) и среднее время выполнения в секундах.\nМожно отфильтровать по автору и периоду создания задач ` + "`" + `[from, to)` + "`" + `; ` + "`" + `to` + "`" + ` должен быть позже ` + "`" + `from` + "`" + `.\nДаты трактуются в часовом поясе приложения (TIME_ZONE).",
                 "produces": [
                     "application/json"
                 ],
@@ -106,6 +106,12 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/internal_features_tasks_transport_http.TaskDTOResponse"
+                            }
+                        },
+                        "headers": {
+                            "X-Total-Count": {
+                                "type": "integer",
+                                "description": "Общее количество задач с учётом фильтра"
                             }
                         }
                     },
@@ -221,7 +227,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удаление существующей в системе задачи по её ID",
+                "description": "Удаление существующей в системе задачи по её ID.\nЕсли передан ` + "`" + `version` + "`" + ` и задачу уже изменили, вернётся 409.",
                 "tags": [
                     "tasks"
                 ],
@@ -233,6 +239,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Версия задачи, которую видел клиент",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -247,6 +259,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Task not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict: task was concurrently modified",
                         "schema": {
                             "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
                         }
@@ -354,6 +372,12 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/internal_features_users_transport_http.UserDTOResponse"
+                            }
+                        },
+                        "headers": {
+                            "X-Total-Count": {
+                                "type": "integer",
+                                "description": "Общее количество пользователей"
                             }
                         }
                     },
@@ -463,7 +487,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удаление существующего в системе пользователя по его ID вместе со всеми его задачами",
+                "description": "Удаление существующего в системе пользователя по его ID вместе со всеми его задачами.\nЕсли передан ` + "`" + `version` + "`" + ` и пользователя уже изменили, вернётся 409.",
                 "tags": [
                     "users"
                 ],
@@ -475,6 +499,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Версия пользователя, которую видел клиент",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -489,6 +519,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict: user was concurrently modified",
                         "schema": {
                             "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
                         }
@@ -583,9 +619,9 @@ const docTemplate = `{
         "internal_features_statistics_transport_http.GetStatisticsResponse": {
             "type": "object",
             "properties": {
-                "tasks_average_completion_time": {
-                    "type": "string",
-                    "example": "26h30m0s"
+                "tasks_average_completion_seconds": {
+                    "type": "number",
+                    "example": 95400.5
                 },
                 "tasks_completed": {
                     "type": "integer",
@@ -593,7 +629,7 @@ const docTemplate = `{
                 },
                 "tasks_completed_rate": {
                     "type": "number",
-                    "example": 75
+                    "example": 75.25
                 },
                 "tasks_created": {
                     "type": "integer",
@@ -610,6 +646,8 @@ const docTemplate = `{
             "properties": {
                 "author_user_id": {
                     "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 1,
                     "example": 10
                 },
                 "description": {

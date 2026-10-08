@@ -3,13 +3,16 @@ package core_logger
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+const logFileName = "todoapp.log"
 
 type loggerContextKey struct{}
 
@@ -20,7 +23,7 @@ var (
 type Logger struct {
 	*zap.Logger
 
-	file *os.File
+	file io.Closer
 }
 
 func ToContext(ctx context.Context, log *Logger) context.Context {
@@ -50,21 +53,15 @@ func NewLogger(config Config) (*Logger, error) {
 		return nil, fmt.Errorf("mkdir log folder: %w", err)
 	}
 
-	timestamp := time.Now().UTC().Format("2006-01-02T15-04-05.000000")
-	logFilePath := filepath.Join(
-		config.Folder,
-		fmt.Sprintf("%s.log", timestamp),
-	)
-
-	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("open log file: %w", err)
+	logFile := &lumberjack.Logger{
+		Filename:   filepath.Join(config.Folder, logFileName),
+		MaxSize:    config.MaxSizeMB,
+		MaxBackups: config.MaxBackups,
+		MaxAge:     config.MaxAgeDays,
+		Compress:   true,
 	}
 
-	zapConfig := zap.NewDevelopmentEncoderConfig()
-	zapConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000")
-
-	zapEncoder := zapcore.NewConsoleEncoder(zapConfig)
+	zapEncoder := newEncoder(config.Format)
 
 	core := zapcore.NewTee(
 		zapcore.NewCore(zapEncoder, zapcore.AddSync(os.Stdout), zapLvl),
@@ -79,6 +76,20 @@ func NewLogger(config Config) (*Logger, error) {
 	}, nil
 }
 
+func newEncoder(format string) zapcore.Encoder {
+	if format == FormatJSON {
+		encoderConfig := zap.NewProductionEncoderConfig()
+		encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+		return zapcore.NewJSONEncoder(encoderConfig)
+	}
+
+	encoderConfig := zap.NewDevelopmentEncoderConfig()
+	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000")
+
+	return zapcore.NewConsoleEncoder(encoderConfig)
+}
+
 func (l *Logger) With(field ...zap.Field) *Logger {
 	return &Logger{
 		Logger: l.Logger.With(field...),
@@ -87,7 +98,9 @@ func (l *Logger) With(field ...zap.Field) *Logger {
 }
 
 func (l *Logger) Close() {
+	_ = l.Logger.Sync()
+
 	if err := l.file.Close(); err != nil {
-		fmt.Println("failed to close application logger: ", err)
+		fmt.Fprintln(os.Stderr, "failed to close application logger:", err)
 	}
 }

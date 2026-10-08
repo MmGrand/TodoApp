@@ -8,7 +8,7 @@ import (
 	core_http_server "github.com/MmGrand/TodoApp/internal/core/transport/http/server"
 )
 
-type UserHTTPHandler struct {
+type UsersHTTPHandler struct {
 	usersService UsersService
 }
 
@@ -22,7 +22,7 @@ type UsersService interface {
 		ctx context.Context,
 		limit *int,
 		offset *int,
-	) ([]domain.User, error)
+	) ([]domain.User, int, error)
 
 	GetUser(
 		ctx context.Context,
@@ -32,6 +32,7 @@ type UsersService interface {
 	DeleteUser(
 		ctx context.Context,
 		id int,
+		version *int,
 	) error
 
 	PatchUser(
@@ -44,13 +45,13 @@ type UsersService interface {
 
 func NewUsersHTTPHandler(
 	usersService UsersService,
-) *UserHTTPHandler {
-	return &UserHTTPHandler{
+) *UsersHTTPHandler {
+	return &UsersHTTPHandler{
 		usersService: usersService,
 	}
 }
 
-func (h *UserHTTPHandler) Routes() []core_http_server.Route {
+func (h *UsersHTTPHandler) Routes() []core_http_server.Route {
 	return []core_http_server.Route{
 		{
 			Method:  http.MethodPost,

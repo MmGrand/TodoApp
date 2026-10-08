@@ -23,7 +23,7 @@ type TasksService interface {
 		userID *int,
 		limit *int,
 		offset *int,
-	) ([]domain.Task, error)
+	) ([]domain.Task, int, error)
 
 	GetTask(
 		ctx context.Context,
@@ -33,6 +33,7 @@ type TasksService interface {
 	DeleteTask(
 		ctx context.Context,
 		id int,
+		version *int,
 	) error
 
 	PatchTask(

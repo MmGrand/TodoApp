@@ -62,6 +62,19 @@ func (r *TasksRepository) PatchTask(
 	)
 	if err != nil {
 		if errors.Is(err, core_postgres_pool.ErrNoRows) {
+			exists, err := r.taskExists(ctx, id)
+			if err != nil {
+				return domain.Task{}, err
+			}
+
+			if !exists {
+				return domain.Task{}, fmt.Errorf(
+					"task with id='%d': %w",
+					id,
+					core_errors.ErrNotFound,
+				)
+			}
+
 			return domain.Task{}, fmt.Errorf(
 				"task with id='%d' concurrently accessed: %w",
 				id,
@@ -70,7 +83,7 @@ func (r *TasksRepository) PatchTask(
 		}
 
 		if errors.Is(err, core_postgres_pool.ErrViolatesCheck) {
-			return domain.Task{}, fmt.Errorf("%w: %w", core_postgres_pool.ErrViolatesCheck, core_errors.ErrInvalidArgument)
+			return domain.Task{}, fmt.Errorf("%w: %w", err, core_errors.ErrInvalidArgument)
 		}
 
 		return domain.Task{}, fmt.Errorf("scan error: %w", err)

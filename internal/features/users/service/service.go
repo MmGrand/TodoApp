@@ -22,6 +22,8 @@ type UsersRepository interface {
 		offset *int,
 	) ([]domain.User, error)
 
+	CountUsers(ctx context.Context) (int, error)
+
 	GetUser(
 		ctx context.Context,
 		id int,
@@ -30,6 +32,7 @@ type UsersRepository interface {
 	DeleteUser(
 		ctx context.Context,
 		id int,
+		version *int,
 	) error
 
 	PatchUser(
@@ -39,7 +42,7 @@ type UsersRepository interface {
 	) (domain.User, error)
 }
 
-func NewUserService(
+func NewUsersService(
 	usersRepository UsersRepository,
 ) *UsersService {
 	return &UsersService{

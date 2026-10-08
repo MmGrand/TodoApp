@@ -10,8 +10,8 @@ import (
 )
 
 type CreateUserRequest struct {
-	FullName    string  `json:"full_name" validate:"required,min=3,max=100" example:"Ivan Ivanov"`
-	PhoneNumber *string `json:"phone_number" validate:"omitempty,min=10,max=15,startswith=+" example:"+79999999999"`
+	FullName    string  `json:"full_name" validate:"required" minLength:"3" maxLength:"100" example:"Ivan Ivanov"`
+	PhoneNumber *string `json:"phone_number" minLength:"10" maxLength:"15" example:"+79999999999"`
 }
 
 type CreateUserResponse UserDTOResponse
@@ -27,7 +27,7 @@ type CreateUserResponse UserDTOResponse
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"
 // @Router /users [post]
-func (h *UserHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
+func (h *UsersHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)

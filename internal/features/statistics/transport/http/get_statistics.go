@@ -2,6 +2,7 @@ package statistics_transport_http
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -14,14 +15,14 @@ import (
 type GetStatisticsResponse struct {
 	TasksCreated               int      `json:"tasks_created" example:"20"`
 	TasksCompleted             int      `json:"tasks_completed" example:"15"`
-	TasksCompletedRate         *float64 `json:"tasks_completed_rate" example:"75"`
-	TasksAverageCompletionTime *string  `json:"tasks_average_completion_time" example:"26h30m0s"`
+	TasksCompletedRate         *float64 `json:"tasks_completed_rate" example:"75.25"`
+	TasksAverageCompletionTime *float64 `json:"tasks_average_completion_seconds" example:"95400.5"`
 }
 
 // GetStatistics godoc
 // @Summary Статистика по задачам
 // @Description Получить статистику по задачам: количество созданных и выполненных,
-// @Description процент выполнения и среднее время выполнения.
+// @Description процент выполнения (округлён до сотых) и среднее время выполнения в секундах.
 // @Description Можно отфильтровать по автору и периоду создания задач `[from, to)`; `to` должен быть позже `from`.
 // @Description Даты трактуются в часовом поясе приложения (TIME_ZONE).
 // @Tags statistics
@@ -38,7 +39,7 @@ func (h *StatisticsHTTPHandler) GetStatistics(rw http.ResponseWriter, r *http.Re
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)
 
-	userID, from, to, err := getUserIDFromToQueryParams(r)
+	userID, from, to, err := getUserIDFromToQueryParams(r, h.location)
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,
@@ -64,21 +65,30 @@ func (h *StatisticsHTTPHandler) GetStatistics(rw http.ResponseWriter, r *http.Re
 }
 
 func toDTOFromDomain(statistics domain.Statistics) GetStatisticsResponse {
-	var avgTime *string
+	var rate *float64
+	if statistics.TasksCompletedRate != nil {
+		rounded := math.Round(*statistics.TasksCompletedRate*100) / 100
+		rate = &rounded
+	}
+
+	var avgSeconds *float64
 	if statistics.TasksAverageCompletionTime != nil {
-		duration := statistics.TasksAverageCompletionTime.String()
-		avgTime = &duration
+		seconds := statistics.TasksAverageCompletionTime.Seconds()
+		avgSeconds = &seconds
 	}
 
 	return GetStatisticsResponse{
 		TasksCreated:               statistics.TasksCreated,
 		TasksCompleted:             statistics.TasksCompleted,
-		TasksCompletedRate:         statistics.TasksCompletedRate,
-		TasksAverageCompletionTime: avgTime,
+		TasksCompletedRate:         rate,
+		TasksAverageCompletionTime: avgSeconds,
 	}
 }
 
-func getUserIDFromToQueryParams(r *http.Request) (*int, *time.Time, *time.Time, error) {
+func getUserIDFromToQueryParams(
+	r *http.Request,
+	location *time.Location,
+) (*int, *time.Time, *time.Time, error) {
 	const (
 		userIDQueryParamKey = "user_id"
 		fromQueryParamKey   = "from"
@@ -90,12 +100,12 @@ func getUserIDFromToQueryParams(r *http.Request) (*int, *time.Time, *time.Time, 
 		return nil, nil, nil, fmt.Errorf("get 'user_id' query param: %w", err)
 	}
 
-	from, err := core_http_request.GetDateQueryParam(r, fromQueryParamKey)
+	from, err := core_http_request.GetDateQueryParam(r, fromQueryParamKey, location)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get 'from' query param: %w", err)
 	}
 
-	to, err := core_http_request.GetDateQueryParam(r, toQueryParamKey)
+	to, err := core_http_request.GetDateQueryParam(r, toQueryParamKey, location)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get 'to' query param: %w", err)
 	}

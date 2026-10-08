@@ -10,9 +10,9 @@ import (
 )
 
 type CreateTaskRequest struct {
-	Title        string  `json:"title" validate:"required,min=1,max=100" example:"Купить продукты"`
-	Description  *string `json:"description" validate:"omitempty,min=1,max=1000" example:"Молоко, хлеб, яйца"`
-	AuthorUserID int     `json:"author_user_id" validate:"required" example:"10"`
+	Title        string  `json:"title" validate:"required" minLength:"1" maxLength:"100" example:"Купить продукты"`
+	Description  *string `json:"description" minLength:"1" maxLength:"1000" example:"Молоко, хлеб, яйца"`
+	AuthorUserID int     `json:"author_user_id" validate:"required,min=1,max=2147483647" example:"10"`
 }
 
 type CreateTaskResponse TaskDTOResponse

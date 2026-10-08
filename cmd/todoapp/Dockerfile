@@ -11,6 +11,8 @@ RUN addgroup -S todoapp && adduser -S -G todoapp todoapp \
 WORKDIR /app
 COPY --from=builder /app/cmd/todoapp/exe /app
 USER todoapp
+ENV HTTP_ADDR=:5050
+EXPOSE 5050
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-	CMD wget -qO- http://127.0.0.1:5050/health || exit 1
+	CMD wget -qO- http://127.0.0.1:5050/health/live || exit 1
 CMD ["/app/exe"]

@@ -16,7 +16,7 @@ func (s *StatisticsService) GetStatistics(
 	to *time.Time,
 ) (domain.Statistics, error) {
 	if from != nil && to != nil {
-		if to.Before(*from) || to.Equal(*from) {
+		if !to.After(*from) {
 			return domain.Statistics{}, fmt.Errorf(
 				"`to` must be after `from`: %w",
 				core_errors.ErrInvalidArgument,
