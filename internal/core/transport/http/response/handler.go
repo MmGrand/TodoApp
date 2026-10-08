@@ -17,6 +17,8 @@ const (
 	clientClosedRequestText = "client closed request"
 
 	statusClientClosedRequest = 499
+
+	TotalCountHeader = "X-Total-Count"
 )
 
 type HTTPResponseHandler struct {

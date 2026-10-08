@@ -35,7 +35,7 @@ func NewHTTPServer(
 	}
 }
 
-func (s *HTTPServer) RegisterApiRouters(routers ...*APIVersionRouter) {
+func (s *HTTPServer) RegisterAPIRouters(routers ...*APIVersionRouter) {
 	for _, router := range routers {
 		prefix := "/api/" + string(router.apiVersion)
 
@@ -73,19 +73,28 @@ func (s *HTTPServer) RegisterSwagger() {
 	)
 }
 
-func (s *HTTPServer) RegisterHealthCheck(check func(ctx context.Context) error) {
+func (s *HTTPServer) RegisterHealthChecks(readinessCheck func(ctx context.Context) error) {
 	const checkTimeout = 2 * time.Second
 
 	s.mux.HandleFunc(
-		"GET /health",
+		"GET /health/live",
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"status":"ok"}`))
+		},
+	)
+
+	s.mux.HandleFunc(
+		"GET /health/ready",
 		func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithTimeout(r.Context(), checkTimeout)
 			defer cancel()
 
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-			if err := check(ctx); err != nil {
-				s.log.Warn("health check failed", zap.Error(err))
+			if err := readinessCheck(ctx); err != nil {
+				s.log.Warn("readiness check failed", zap.Error(err))
 
 				w.WriteHeader(http.StatusServiceUnavailable)
 				_, _ = w.Write([]byte(`{"status":"unavailable"}`))
@@ -116,7 +125,7 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 	go func() {
 		defer close(ch)
 
-		s.log.Warn("start HTTP server", zap.String("addr", s.config.Addr))
+		s.log.Info("start HTTP server", zap.String("addr", s.config.Addr))
 
 		err := server.ListenAndServe()
 
@@ -131,7 +140,7 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 			return fmt.Errorf("listen and serve HTTP: %w", err)
 		}
 	case <-ctx.Done():
-		s.log.Warn("shutdown HTTP server...")
+		s.log.Info("shutdown HTTP server...")
 
 		shutdownCtx, cancel := context.WithTimeout(
 			context.Background(),
@@ -145,7 +154,7 @@ func (s *HTTPServer) Run(ctx context.Context) error {
 			return fmt.Errorf("shutdown HTTP server: %w", err)
 		}
 
-		s.log.Warn("HTTP server stopped")
+		s.log.Info("HTTP server stopped")
 	}
 	return nil
 }

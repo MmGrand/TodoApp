@@ -27,7 +27,7 @@ type CreateUserResponse UserDTOResponse
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"
 // @Router /users [post]
-func (h *UserHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
+func (h *UsersHTTPHandler) CreateUser(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)

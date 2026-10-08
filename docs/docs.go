@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/statistics": {
             "get": {
-                "description": "Получить статистику по задачам: количество созданных и выполненных,\nпроцент выполнения и среднее время выполнения.\nМожно отфильтровать по автору и периоду создания задач ` + "`" + `[from, to)` + "`" + `; ` + "`" + `to` + "`" + ` должен быть позже ` + "`" + `from` + "`" + `.\nДаты трактуются в часовом поясе приложения (TIME_ZONE).",
+                "description": "Получить статистику по задачам: количество созданных и выполненных,\nпроцент выполнения (округлён до сотых) и среднее время выполнения в секундах.\nМожно отфильтровать по автору и периоду создания задач ` + "`" + `[from, to)` + "`" + `; ` + "`" + `to` + "`" + ` должен быть позже ` + "`" + `from` + "`" + `.\nДаты трактуются в часовом поясе приложения (TIME_ZONE).",
                 "produces": [
                     "application/json"
                 ],
@@ -106,6 +106,12 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/internal_features_tasks_transport_http.TaskDTOResponse"
+                            }
+                        },
+                        "headers": {
+                            "X-Total-Count": {
+                                "type": "integer",
+                                "description": "Общее количество задач с учётом фильтра"
                             }
                         }
                     },
@@ -367,6 +373,12 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/internal_features_users_transport_http.UserDTOResponse"
                             }
+                        },
+                        "headers": {
+                            "X-Total-Count": {
+                                "type": "integer",
+                                "description": "Общее количество пользователей"
+                            }
                         }
                     },
                     "400": {
@@ -607,9 +619,9 @@ const docTemplate = `{
         "internal_features_statistics_transport_http.GetStatisticsResponse": {
             "type": "object",
             "properties": {
-                "tasks_average_completion_time": {
-                    "type": "string",
-                    "example": "26h30m0s"
+                "tasks_average_completion_seconds": {
+                    "type": "number",
+                    "example": 95400.5
                 },
                 "tasks_completed": {
                     "type": "integer",
@@ -617,7 +629,7 @@ const docTemplate = `{
                 },
                 "tasks_completed_rate": {
                     "type": "number",
-                    "example": 75
+                    "example": 75.25
                 },
                 "tasks_created": {
                     "type": "integer",

@@ -5,7 +5,6 @@ services:
       dockerfile: ${PROJECT_ROOT}/cmd/todoapp/Dockerfile
     container_name: todoapp
     environment:
-      - HTTP_ADDR=:5050
       - HTTP_SHUTDOWN_TIMEOUT=${HTTP_SHUTDOWN_TIMEOUT}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - HTTP_SWAGGER_ENABLED=${HTTP_SWAGGER_ENABLED:-false}
@@ -15,12 +14,13 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_TIMEOUT=${POSTGRES_TIMEOUT}
       - LOGGER_LEVEL=${LOGGER_LEVEL}
+      - LOGGER_FORMAT=${LOGGER_FORMAT:-console}
       - TIME_ZONE=${TIME_ZONE}
       - LOGGER_FOLDER=/app/out/logs
     volumes:
       - ${PROJECT_ROOT}/out/logs:/app/out/logs
     ports:
-      - "5050:5050"
+      - "${HTTP_HOST_PORT:-5050}:5050"
     depends_on:
       todoapp-postgres:
         condition: service_healthy

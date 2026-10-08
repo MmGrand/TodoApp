@@ -12,10 +12,10 @@ func (s *TasksService) GetTasks(
 	userID *int,
 	limit *int,
 	offset *int,
-) ([]domain.Task, error) {
+) ([]domain.Task, int, error) {
 	pagination, err := domain.NewPagination(limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("pagination: %w", err)
+		return nil, 0, fmt.Errorf("pagination: %w", err)
 	}
 
 	tasks, err := s.tasksRepository.GetTasks(
@@ -25,8 +25,13 @@ func (s *TasksService) GetTasks(
 		&pagination.Offset,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("get tasks from repository: %w", err)
+		return nil, 0, fmt.Errorf("get tasks from repository: %w", err)
 	}
 
-	return tasks, nil
+	total, err := s.tasksRepository.CountTasks(ctx, userID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count tasks in repository: %w", err)
+	}
+
+	return tasks, total, nil
 }

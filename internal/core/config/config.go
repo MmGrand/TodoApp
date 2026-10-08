@@ -31,13 +31,3 @@ func NewConfig() (*Config, error) {
 		TimeZone: zone,
 	}, nil
 }
-
-func NewConfigMust() *Config {
-	config, err := NewConfig()
-	if err != nil {
-		err = fmt.Errorf("get core config: %w", err)
-		panic(err)
-	}
-
-	return config
-}

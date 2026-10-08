@@ -3,6 +3,7 @@ package core_http_middleware
 import (
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	core_logger "github.com/MmGrand/TodoApp/internal/core/logger"
@@ -12,7 +13,8 @@ import (
 )
 
 const (
-	requestIDHeader = "X-Request-ID"
+	requestIDHeader  = "X-Request-ID"
+	healthPathPrefix = "/health/"
 
 	contentSecurityPolicy = "default-src 'self'; " +
 		"script-src 'self' 'unsafe-inline'; " +
@@ -45,7 +47,7 @@ func CORS(allowedOriginsList []string) Middleware {
 
 			if allowed {
 				w.Header().Set("Access-Control-Allow-Origin", origin)
-				w.Header().Set("Access-Control-Expose-Headers", requestIDHeader)
+				w.Header().Set("Access-Control-Expose-Headers", requestIDHeader+", "+core_http_response.TotalCountHeader)
 			}
 
 			isPreflight := r.Method == http.MethodOptions &&
@@ -115,10 +117,10 @@ func RequestID() Middleware {
 func Logger(log *core_logger.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			RequestID := r.Header.Get(requestIDHeader)
+			requestID := r.Header.Get(requestIDHeader)
 
 			l := log.With(
-				zap.String("request_id", RequestID),
+				zap.String("request_id", requestID),
 				zap.String("url", r.URL.String()),
 			)
 
@@ -132,6 +134,12 @@ func Logger(log *core_logger.Logger) Middleware {
 func Trace() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, healthPathPrefix) {
+				next.ServeHTTP(w, r)
+
+				return
+			}
+
 			ctx := r.Context()
 			log := core_logger.FromContext(ctx)
 			rw := core_http_response.NewResponseWriter(w)

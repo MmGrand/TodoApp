@@ -44,7 +44,7 @@ type PatchUserResponse UserDTOResponse
 // @Failure 409 {object} core_http_response.ErrorResponse "Conflict: user was concurrently modified"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"
 // @Router /users/{id} [patch]
-func (h *UserHTTPHandler) PatchUser(rw http.ResponseWriter, r *http.Request) {
+func (h *UsersHTTPHandler) PatchUser(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)

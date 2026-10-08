@@ -11,14 +11,14 @@ definitions:
     type: object
   internal_features_statistics_transport_http.GetStatisticsResponse:
     properties:
-      tasks_average_completion_time:
-        example: 26h30m0s
-        type: string
+      tasks_average_completion_seconds:
+        example: 95400.5
+        type: number
       tasks_completed:
         example: 15
         type: integer
       tasks_completed_rate:
-        example: 75
+        example: 75.25
         type: number
       tasks_created:
         example: 20
@@ -265,7 +265,7 @@ paths:
     get:
       description: |-
         Получить статистику по задачам: количество созданных и выполненных,
-        процент выполнения и среднее время выполнения.
+        процент выполнения (округлён до сотых) и среднее время выполнения в секундах.
         Можно отфильтровать по автору и периоду создания задач `[from, to)`; `to` должен быть позже `from`.
         Даты трактуются в часовом поясе приложения (TIME_ZONE).
       parameters:
@@ -323,6 +323,10 @@ paths:
       responses:
         "200":
           description: Список задач
+          headers:
+            X-Total-Count:
+              description: Общее количество задач с учётом фильтра
+              type: integer
           schema:
             items:
               $ref: '#/definitions/internal_features_tasks_transport_http.TaskDTOResponse'
@@ -502,6 +506,10 @@ paths:
       responses:
         "200":
           description: Список пользователей
+          headers:
+            X-Total-Count:
+              description: Общее количество пользователей
+              type: integer
           schema:
             items:
               $ref: '#/definitions/internal_features_users_transport_http.UserDTOResponse'
