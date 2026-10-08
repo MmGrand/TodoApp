@@ -13,6 +13,17 @@ import (
 
 const (
 	requestIDHeader = "X-Request-ID"
+
+	contentSecurityPolicy = "default-src 'self'; " +
+		"script-src 'self' 'unsafe-inline'; " +
+		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+		"font-src 'self' https://fonts.gstatic.com; " +
+		"img-src 'self' data:; " +
+		"connect-src 'self'; " +
+		"object-src 'none'; " +
+		"base-uri 'self'; " +
+		"form-action 'self'; " +
+		"frame-ancestors 'none'"
 )
 
 var (
@@ -53,6 +64,21 @@ func CORS(allowedOriginsList []string) Middleware {
 				w.WriteHeader(http.StatusNoContent)
 				return
 			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func SecurityHeaders() Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			h := w.Header()
+			h.Set("Content-Security-Policy", contentSecurityPolicy)
+			h.Set("X-Content-Type-Options", "nosniff")
+			h.Set("X-Frame-Options", "DENY")
+			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			h.Set("Cross-Origin-Opener-Policy", "same-origin")
 
 			next.ServeHTTP(w, r)
 		})

@@ -100,6 +100,7 @@ func run(logger *core_logger.Logger) error {
 		httpConfig,
 		logger,
 		core_http_middleware.Panic(logger),
+		core_http_middleware.SecurityHeaders(),
 		core_http_middleware.CORS(httpConfig.AllowedOrigins),
 		core_http_middleware.RequestID(),
 		core_http_middleware.Logger(logger),

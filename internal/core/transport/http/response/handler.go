@@ -1,6 +1,7 @@
 package core_http_response
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,10 @@ import (
 )
 
 const (
-	internalErrorText = "internal server error"
+	internalErrorText       = "internal server error"
+	clientClosedRequestText = "client closed request"
+
+	statusClientClosedRequest = 499
 )
 
 type HTTPResponseHandler struct {
@@ -47,35 +51,41 @@ func (h *HTTPResponseHandler) ErrorResponse(err error, msg string) {
 	var (
 		statusCode int
 		logFunc    func(string, ...zap.Field)
-		sentinel   error
+		errText    string
 	)
 
 	switch {
 	case errors.Is(err, core_errors.ErrInvalidArgument):
 		statusCode = http.StatusBadRequest
 		logFunc = h.log.Warn
-		sentinel = core_errors.ErrInvalidArgument
+		errText = publicErrorText(err, core_errors.ErrInvalidArgument)
 
 	case errors.Is(err, core_errors.ErrNotFound):
 		statusCode = http.StatusNotFound
 		logFunc = h.log.Debug
-		sentinel = core_errors.ErrNotFound
+		errText = publicErrorText(err, core_errors.ErrNotFound)
 
 	case errors.Is(err, core_errors.ErrConflict):
 		statusCode = http.StatusConflict
 		logFunc = h.log.Warn
-		sentinel = core_errors.ErrConflict
+		errText = publicErrorText(err, core_errors.ErrConflict)
+
+	case errors.Is(err, context.Canceled):
+		statusCode = statusClientClosedRequest
+		logFunc = h.log.Debug
+		errText = clientClosedRequestText
 
 	default:
 		statusCode = http.StatusInternalServerError
 		logFunc = h.log.Error
+		errText = internalErrorText
 	}
 
 	logFunc(msg, zap.Error(err))
 
 	h.errorResponse(
 		statusCode,
-		publicErrorText(err, sentinel),
+		errText,
 		msg,
 	)
 }
