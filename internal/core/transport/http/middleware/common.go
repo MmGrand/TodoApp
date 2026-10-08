@@ -127,12 +127,10 @@ func Trace() Middleware {
 	}
 }
 
-func Panic() Middleware {
+func Panic(log *core_logger.Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			log := core_logger.FromContext(ctx)
-			responseHandler := core_http_response.NewHTTPResponseHandler(log, w)
+			rw := core_http_response.NewResponseWriter(w)
 
 			defer func() {
 				if p := recover(); p != nil {
@@ -140,14 +138,28 @@ func Panic() Middleware {
 						panic(p)
 					}
 
-					responseHandler.PanicResponse(
-						p,
-						"during handle HTTP request got unexpected panic",
+					const msg = "during handle HTTP request got unexpected panic"
+
+					l := log.With(
+						zap.String("request_id", r.Header.Get(requestIDHeader)),
+						zap.String("url", r.URL.String()),
 					)
+
+					if rw.IsHeaderWritten() {
+						l.Error(
+							msg+" after response was started, aborting connection",
+							zap.Any("panic", p),
+							zap.Stack("stack"),
+						)
+
+						panic(http.ErrAbortHandler)
+					}
+
+					core_http_response.NewHTTPResponseHandler(l, rw).PanicResponse(p, msg)
 				}
 			}()
 
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(rw, r)
 		})
 	}
 }

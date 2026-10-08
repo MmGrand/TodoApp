@@ -47,11 +47,14 @@ services:
     image: migrate/migrate:v4.19.1
     volumes:
       - ${PROJECT_ROOT}/migrations:/migrations
+    environment:
+      - PGUSER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
     command:
       - -path
       - /migrations
       - -database
-      - postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todoapp-postgres:5432/${POSTGRES_DB}?sslmode=disable
+      - postgres://todoapp-postgres:5432/${POSTGRES_DB}?sslmode=disable
       - up
     depends_on:
       todoapp-postgres:

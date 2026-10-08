@@ -20,7 +20,30 @@ func NewResponseWriter(w http.ResponseWriter) *ResponseWriter {
 
 func (rw *ResponseWriter) WriteHeader(statusCode int) {
 	rw.ResponseWriter.WriteHeader(statusCode)
-	rw.statusCode = statusCode
+
+	if rw.statusCode == StatusCodeUninitialized {
+		rw.statusCode = statusCode
+	}
+}
+
+func (rw *ResponseWriter) Write(b []byte) (int, error) {
+	if rw.statusCode == StatusCodeUninitialized {
+		rw.statusCode = http.StatusOK
+	}
+
+	return rw.ResponseWriter.Write(b)
+}
+
+func (rw *ResponseWriter) Flush() {
+	if rw.statusCode == StatusCodeUninitialized {
+		rw.statusCode = http.StatusOK
+	}
+
+	_ = http.NewResponseController(rw.ResponseWriter).Flush()
+}
+
+func (rw *ResponseWriter) IsHeaderWritten() bool {
+	return rw.statusCode != StatusCodeUninitialized
 }
 
 func (rw *ResponseWriter) Unwrap() http.ResponseWriter {
