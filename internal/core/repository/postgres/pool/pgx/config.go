@@ -15,6 +15,11 @@ type Config struct {
 	Database string        `envconfig:"DB" required:"true"`
 	SSLMode  string        `envconfig:"SSL_MODE" default:"disable"`
 	Timeout  time.Duration `envconfig:"TIMEOUT" required:"true"`
+
+	MaxConns        int32         `envconfig:"MAX_CONNS"`
+	MinConns        int32         `envconfig:"MIN_CONNS"`
+	MaxConnLifetime time.Duration `envconfig:"MAX_CONN_LIFETIME"`
+	MaxConnIdleTime time.Duration `envconfig:"MAX_CONN_IDLE_TIME"`
 }
 
 func NewConfig() (Config, error) {

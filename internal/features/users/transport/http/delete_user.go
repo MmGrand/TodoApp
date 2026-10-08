@@ -10,12 +10,15 @@ import (
 
 // DeleteUser godoc
 // @Summary Удаление пользователя
-// @Description Удаление существующего в системе пользователя по его ID вместе со всеми его задачами
+// @Description Удаление существующего в системе пользователя по его ID вместе со всеми его задачами.
+// @Description Если передан `version` и пользователя уже изменили, вернётся 409.
 // @Tags users
 // @Param id path int true "ID удаляемого пользователя"
+// @Param version query int false "Версия пользователя, которую видел клиент"
 // @Success 204 "Успешное удаление пользователя"
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad request"
 // @Failure 404 {object} core_http_response.ErrorResponse "User not found"
+// @Failure 409 {object} core_http_response.ErrorResponse "Conflict: user was concurrently modified"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal server error"
 // @Router /users/{id} [delete]
 func (h *UserHTTPHandler) DeleteUser(rw http.ResponseWriter, r *http.Request) {
@@ -33,7 +36,17 @@ func (h *UserHTTPHandler) DeleteUser(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.usersService.DeleteUser(ctx, userID); err != nil {
+	version, err := core_http_request.GetVersionQueryParam(r)
+	if err != nil {
+		responseHandler.ErrorResponse(
+			err,
+			"failed to get 'version' query param",
+		)
+
+		return
+	}
+
+	if err := h.usersService.DeleteUser(ctx, userID, version); err != nil {
 		responseHandler.ErrorResponse(
 			err,
 			"failed to delete user",

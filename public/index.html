@@ -633,8 +633,6 @@ async function fetchAll(path) {
 }
 function humanError(err) {
   if (!(err instanceof ApiError) || err.status === 0) return 'Не удалось связаться с сервером';
-  const d = String(err.detail || '').toLowerCase();
-  if (d.includes('related records')) return 'Есть связанные задачи — сначала удалите их';
   switch (err.status) {
     case 400: return 'Некорректные данные';
     case 404: return 'Не найдено — возможно, объект уже удалён';
@@ -1048,7 +1046,7 @@ function deleteTask(task) {
     body: `<p class="confirm-text">Задача <b>«${esc(task.title)}»</b> будет удалена без возможности восстановления.</p>`,
     onSubmit: async () => {
       try {
-        await api('DELETE', `/tasks/${task.id}`);
+        await api('DELETE', `/tasks/${task.id}?version=${task.version}`);
       } catch (err) {
         if (err.status !== 404) throw err;
       }
@@ -1188,7 +1186,7 @@ function deleteUser(user) {
     body: `<p class="confirm-text">Пользователь <b>${esc(user.full_name)}</b> будет удалён без возможности восстановления.</p>
       ${n ? `<div class="note">${icon('alert')}<span>У пользователя ${n} ${plural(n, 'задача', 'задачи', 'задач')}, они будут удалены вместе с ним.</span></div>` : ''}`,
     onSubmit: async () => {
-      try { await api('DELETE', `/users/${user.id}`); } catch (err) { if (err.status !== 404) throw err; }
+      try { await api('DELETE', `/users/${user.id}?version=${user.version}`); } catch (err) { if (err.status !== 404) throw err; }
       store.tasks = store.tasks.filter((t) => t.author_user_id !== user.id);
       store.users = store.users.filter((u) => u.id !== user.id);
       if (ts.author === String(user.id)) ts.author = '';

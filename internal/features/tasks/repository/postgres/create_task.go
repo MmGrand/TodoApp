@@ -57,7 +57,7 @@ func (r *TasksRepository) CreateTask(
 		}
 
 		if errors.Is(err, core_postgres_pool.ErrViolatesCheck) {
-			return domain.Task{}, fmt.Errorf("%w: %w", core_postgres_pool.ErrViolatesCheck, core_errors.ErrInvalidArgument)
+			return domain.Task{}, fmt.Errorf("%w: %w", err, core_errors.ErrInvalidArgument)
 		}
 
 		return domain.Task{}, fmt.Errorf("scan error: %w", err)

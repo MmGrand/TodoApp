@@ -38,7 +38,7 @@ func (h *StatisticsHTTPHandler) GetStatistics(rw http.ResponseWriter, r *http.Re
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)
 
-	userID, from, to, err := getUserIDFromToQueryParams(r)
+	userID, from, to, err := getUserIDFromToQueryParams(r, h.location)
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,
@@ -78,7 +78,10 @@ func toDTOFromDomain(statistics domain.Statistics) GetStatisticsResponse {
 	}
 }
 
-func getUserIDFromToQueryParams(r *http.Request) (*int, *time.Time, *time.Time, error) {
+func getUserIDFromToQueryParams(
+	r *http.Request,
+	location *time.Location,
+) (*int, *time.Time, *time.Time, error) {
 	const (
 		userIDQueryParamKey = "user_id"
 		fromQueryParamKey   = "from"
@@ -90,12 +93,12 @@ func getUserIDFromToQueryParams(r *http.Request) (*int, *time.Time, *time.Time, 
 		return nil, nil, nil, fmt.Errorf("get 'user_id' query param: %w", err)
 	}
 
-	from, err := core_http_request.GetDateQueryParam(r, fromQueryParamKey)
+	from, err := core_http_request.GetDateQueryParam(r, fromQueryParamKey, location)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get 'from' query param: %w", err)
 	}
 
-	to, err := core_http_request.GetDateQueryParam(r, toQueryParamKey)
+	to, err := core_http_request.GetDateQueryParam(r, toQueryParamKey, location)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get 'to' query param: %w", err)
 	}

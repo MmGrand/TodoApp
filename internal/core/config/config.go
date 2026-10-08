@@ -2,23 +2,29 @@ package core_config
 
 import (
 	"fmt"
-	"os"
 	"time"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
 	TimeZone *time.Location
 }
 
+type envConfig struct {
+	TimeZone string `envconfig:"TIME_ZONE" default:"UTC"`
+}
+
 func NewConfig() (*Config, error) {
-	tz := os.Getenv("TIME_ZONE")
-	if tz == "" {
-		tz = "UTC"
+	var env envConfig
+
+	if err := envconfig.Process("", &env); err != nil {
+		return nil, fmt.Errorf("process envconfig: %w", err)
 	}
 
-	zone, err := time.LoadLocation(tz)
+	zone, err := time.LoadLocation(env.TimeZone)
 	if err != nil {
-		return nil, fmt.Errorf("load time zone: %s: %w", tz, err)
+		return nil, fmt.Errorf("load time zone: %s: %w", env.TimeZone, err)
 	}
 
 	return &Config{

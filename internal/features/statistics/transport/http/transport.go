@@ -11,6 +11,7 @@ import (
 
 type StatisticsHTTPHandler struct {
 	statisticsService StatisticsService
+	location          *time.Location
 }
 
 type StatisticsService interface {
@@ -24,9 +25,11 @@ type StatisticsService interface {
 
 func NewStatisticsHTTPHandler(
 	statisticsService StatisticsService,
+	location *time.Location,
 ) *StatisticsHTTPHandler {
 	return &StatisticsHTTPHandler{
 		statisticsService: statisticsService,
+		location:          location,
 	}
 }
 

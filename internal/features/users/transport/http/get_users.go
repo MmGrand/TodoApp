@@ -1,7 +1,6 @@
 package users_transport_http
 
 import (
-	"fmt"
 	"net/http"
 
 	core_logger "github.com/MmGrand/TodoApp/internal/core/logger"
@@ -27,7 +26,7 @@ func (h *UserHTTPHandler) GetUsers(rw http.ResponseWriter, r *http.Request) {
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)
 
-	limit, offset, err := getLimitOffsetQueryParams(r)
+	limit, offset, err := core_http_request.GetLimitOffsetQueryParams(r)
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,
@@ -50,22 +49,4 @@ func (h *UserHTTPHandler) GetUsers(rw http.ResponseWriter, r *http.Request) {
 	response := GetUsersResponse(usersDTOFromDomains(userDomains))
 
 	responseHandler.JSONResponse(response, http.StatusOK)
-}
-
-func getLimitOffsetQueryParams(r *http.Request) (*int, *int, error) {
-	const (
-		limitQueryParamKey  = "limit"
-		OffsetQueryParamKey = "offset"
-	)
-	limit, err := core_http_request.GetIntQueryParam(r, limitQueryParamKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("get 'limit' query param: %w", err)
-	}
-
-	offset, err := core_http_request.GetIntQueryParam(r, OffsetQueryParamKey)
-	if err != nil {
-		return nil, nil, fmt.Errorf("get 'offset' query param: %w", err)
-	}
-
-	return limit, offset, nil
 }

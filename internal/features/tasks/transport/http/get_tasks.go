@@ -54,25 +54,16 @@ func (h *TasksHTTPHandler) GetTasks(rw http.ResponseWriter, r *http.Request) {
 }
 
 func getUserIDLimitOffsetQueryParams(r *http.Request) (*int, *int, *int, error) {
-	const (
-		UserIDQueryParamKey = "user_id"
-		limitQueryParamKey  = "limit"
-		OffsetQueryParamKey = "offset"
-	)
+	const userIDQueryParamKey = "user_id"
 
-	userID, err := core_http_request.GetIntQueryParam(r, UserIDQueryParamKey)
+	userID, err := core_http_request.GetIntQueryParam(r, userIDQueryParamKey)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("get 'user_id' query param: %w", err)
 	}
 
-	limit, err := core_http_request.GetIntQueryParam(r, limitQueryParamKey)
+	limit, offset, err := core_http_request.GetLimitOffsetQueryParams(r)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("get 'limit' query param: %w", err)
-	}
-
-	offset, err := core_http_request.GetIntQueryParam(r, OffsetQueryParamKey)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("get 'offset' query param: %w", err)
+		return nil, nil, nil, err
 	}
 
 	return userID, limit, offset, nil

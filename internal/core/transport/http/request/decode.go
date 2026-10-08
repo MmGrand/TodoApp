@@ -62,23 +62,22 @@ func DecodeAndValidateRequest(r *http.Request, dest any) error {
 		)
 	}
 
-	var (
-		err error
-	)
-
-	v, ok := dest.(validatable)
-	if ok {
-		err = v.Validate()
-	} else {
-		err = requestValidator.Struct(dest)
-	}
-
-	if err != nil {
+	if err := requestValidator.Struct(dest); err != nil {
 		return fmt.Errorf(
 			"request validation: %s: %w",
 			validationErrorText(err),
 			core_errors.ErrInvalidArgument,
 		)
+	}
+
+	if v, ok := dest.(validatable); ok {
+		if err := v.Validate(); err != nil {
+			return fmt.Errorf(
+				"request validation: %s: %w",
+				err,
+				core_errors.ErrInvalidArgument,
+			)
+		}
 	}
 
 	return nil

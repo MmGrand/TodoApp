@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 	_ "time/tzdata"
 
 	core_config "github.com/MmGrand/TodoApp/internal/core/config"
@@ -28,8 +27,6 @@ import (
 	web_transport_http "github.com/MmGrand/TodoApp/internal/features/web/transport"
 	"github.com/MmGrand/TodoApp/public"
 	"go.uber.org/zap"
-
-	_ "github.com/MmGrand/TodoApp/docs"
 )
 
 // @title 			Golang Todo API
@@ -38,7 +35,6 @@ import (
 // @BasePath 		/api/v1
 func main() {
 	cfg := core_config.NewConfigMust()
-	time.Local = cfg.TimeZone
 
 	logger, err := core_logger.NewLogger(core_logger.NewConfigMust())
 	if err != nil {
@@ -46,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = run(logger)
+	err = run(cfg, logger)
 	logger.Close()
 
 	if err != nil {
@@ -54,14 +50,14 @@ func main() {
 	}
 }
 
-func run(logger *core_logger.Logger) error {
+func run(cfg *core_config.Config, logger *core_logger.Logger) error {
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT, syscall.SIGTERM,
 	)
 	defer cancel()
 
-	logger.Debug("application time zone", zap.Any("zone", time.Local))
+	logger.Debug("application time zone", zap.Stringer("zone", cfg.TimeZone))
 
 	logger.Debug("initializing postgres connection pool")
 	pool, err := core_pgx_pool.NewPool(
@@ -87,7 +83,7 @@ func run(logger *core_logger.Logger) error {
 	logger.Debug("initializing feature", zap.String("feature", "statistics"))
 	statisticsRepository := statistics_postgres_repository.NewStatisticsRepository(pool)
 	statisticsService := statistics_service.NewStatisticsService(statisticsRepository)
-	statisticsTransportHTTP := statistics_transport_http.NewStatisticsHTTPHandler(statisticsService)
+	statisticsTransportHTTP := statistics_transport_http.NewStatisticsHTTPHandler(statisticsService, cfg.TimeZone)
 
 	logger.Debug("initializing feature", zap.String("feature", "web"))
 	webRepository := web_fs_repository.NewWebRepository(public.FS)

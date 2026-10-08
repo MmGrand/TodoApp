@@ -30,6 +30,7 @@ type UsersRepository interface {
 	DeleteUser(
 		ctx context.Context,
 		id int,
+		version *int,
 	) error
 
 	PatchUser(

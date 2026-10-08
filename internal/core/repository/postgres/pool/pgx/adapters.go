@@ -60,10 +60,10 @@ func mapErrors(err error) error {
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case pgxViolatesForeignKeyErrorCode:
-			return fmt.Errorf("%w: %w", err, core_postgres_pool.ErrViolatesForeignKey)
+			return fmt.Errorf("%w %q", core_postgres_pool.ErrViolatesForeignKey, pgErr.ConstraintName)
 
 		case pgxViolatesCheckErrorCode:
-			return fmt.Errorf("%w: %w", err, core_postgres_pool.ErrViolatesCheck)
+			return fmt.Errorf("%w %q", core_postgres_pool.ErrViolatesCheck, pgErr.ConstraintName)
 		}
 	}
 

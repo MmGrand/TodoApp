@@ -62,13 +62,9 @@ func (r *TasksRepository) PatchTask(
 	)
 	if err != nil {
 		if errors.Is(err, core_postgres_pool.ErrNoRows) {
-			existsQuery := `
-			SELECT EXISTS(SELECT 1 FROM todoapp.tasks WHERE id = $1);
-			`
-
-			var exists bool
-			if err := r.pool.QueryRow(ctx, existsQuery, id).Scan(&exists); err != nil {
-				return domain.Task{}, fmt.Errorf("check task existence: %w", err)
+			exists, err := r.taskExists(ctx, id)
+			if err != nil {
+				return domain.Task{}, err
 			}
 
 			if !exists {
@@ -87,7 +83,7 @@ func (r *TasksRepository) PatchTask(
 		}
 
 		if errors.Is(err, core_postgres_pool.ErrViolatesCheck) {
-			return domain.Task{}, fmt.Errorf("%w: %w", core_postgres_pool.ErrViolatesCheck, core_errors.ErrInvalidArgument)
+			return domain.Task{}, fmt.Errorf("%w: %w", err, core_errors.ErrInvalidArgument)
 		}
 
 		return domain.Task{}, fmt.Errorf("scan error: %w", err)

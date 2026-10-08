@@ -31,6 +31,7 @@ type TasksRepository interface {
 	DeleteTask(
 		ctx context.Context,
 		id int,
+		version *int,
 	) error
 
 	PatchTask(

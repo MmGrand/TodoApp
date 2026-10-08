@@ -2,41 +2,47 @@ package users_postgres_repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	core_errors "github.com/MmGrand/TodoApp/internal/core/errors"
-	core_postgres_pool "github.com/MmGrand/TodoApp/internal/core/repository/postgres/pool"
 )
 
 func (r *UsersRepository) DeleteUser(
 	ctx context.Context,
 	id int,
+	version *int,
 ) error {
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
 
 	query := `
 	DELETE FROM todoapp.users
-	WHERE id = $1;
+	WHERE id = $1 AND ($2::bigint IS NULL OR version = $2);
 	`
 
-	cmdTag, err := r.pool.Exec(ctx, query, id)
+	cmdTag, err := r.pool.Exec(ctx, query, id, version)
 	if err != nil {
-		if errors.Is(err, core_postgres_pool.ErrViolatesForeignKey) {
+		return fmt.Errorf("exec query: %w", err)
+	}
+
+	if cmdTag.RowsAffected() > 0 {
+		return nil
+	}
+
+	if version != nil {
+		exists, err := r.userExists(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if exists {
 			return fmt.Errorf(
-				"user with id='%d' has related records: %w",
+				"user with id='%d' concurrently accessed: %w",
 				id,
 				core_errors.ErrConflict,
 			)
 		}
-
-		return fmt.Errorf("exec query: %w", err)
 	}
 
-	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("user with id='%d': %w", id, core_errors.ErrNotFound)
-	}
-
-	return nil
+	return fmt.Errorf("user with id='%d': %w", id, core_errors.ErrNotFound)
 }

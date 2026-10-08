@@ -221,7 +221,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удаление существующей в системе задачи по её ID",
+                "description": "Удаление существующей в системе задачи по её ID.\nЕсли передан ` + "`" + `version` + "`" + ` и задачу уже изменили, вернётся 409.",
                 "tags": [
                     "tasks"
                 ],
@@ -233,6 +233,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Версия задачи, которую видел клиент",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -247,6 +253,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Task not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict: task was concurrently modified",
                         "schema": {
                             "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
                         }
@@ -463,7 +475,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удаление существующего в системе пользователя по его ID вместе со всеми его задачами",
+                "description": "Удаление существующего в системе пользователя по его ID вместе со всеми его задачами.\nЕсли передан ` + "`" + `version` + "`" + ` и пользователя уже изменили, вернётся 409.",
                 "tags": [
                     "users"
                 ],
@@ -475,6 +487,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Версия пользователя, которую видел клиент",
+                        "name": "version",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -489,6 +507,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict: user was concurrently modified",
                         "schema": {
                             "$ref": "#/definitions/github_com_MmGrand_TodoApp_internal_core_transport_http_response.ErrorResponse"
                         }
@@ -610,6 +634,8 @@ const docTemplate = `{
             "properties": {
                 "author_user_id": {
                     "type": "integer",
+                    "maximum": 2147483647,
+                    "minimum": 1,
                     "example": 10
                 },
                 "description": {

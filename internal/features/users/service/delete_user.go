@@ -8,8 +8,9 @@ import (
 func (s *UsersService) DeleteUser(
 	ctx context.Context,
 	id int,
+	version *int,
 ) error {
-	if err := s.usersRepository.DeleteUser(ctx, id); err != nil {
+	if err := s.usersRepository.DeleteUser(ctx, id, version); err != nil {
 		return fmt.Errorf("delete user: %w", err)
 	}
 

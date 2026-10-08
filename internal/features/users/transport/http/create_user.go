@@ -10,8 +10,8 @@ import (
 )
 
 type CreateUserRequest struct {
-	FullName    string  `json:"full_name" validate:"required,min=3,max=100" example:"Ivan Ivanov"`
-	PhoneNumber *string `json:"phone_number" validate:"omitempty,min=10,max=15,startswith=+" example:"+79999999999"`
+	FullName    string  `json:"full_name" validate:"required" minLength:"3" maxLength:"100" example:"Ivan Ivanov"`
+	PhoneNumber *string `json:"phone_number" minLength:"10" maxLength:"15" example:"+79999999999"`
 }
 
 type CreateUserResponse UserDTOResponse
