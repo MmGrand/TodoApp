@@ -6,15 +6,32 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
+	"strings"
 
 	core_errors "github.com/MmGrand/TodoApp/internal/core/errors"
 	"github.com/go-playground/validator/v10"
 )
 
-var requestValidator = validator.New()
+var requestValidator = newRequestValidator()
 
 type validatable interface {
 	Validate() error
+}
+
+func newRequestValidator() *validator.Validate {
+	v := validator.New()
+
+	v.RegisterTagNameFunc(func(field reflect.StructField) string {
+		name, _, _ := strings.Cut(field.Tag.Get("json"), ",")
+		if name == "" || name == "-" {
+			return field.Name
+		}
+
+		return name
+	})
+
+	return v
 }
 
 func DecodeAndValidateRequest(r *http.Request, dest any) error {
@@ -32,8 +49,8 @@ func DecodeAndValidateRequest(r *http.Request, dest any) error {
 		}
 
 		return fmt.Errorf(
-			"decode json: %v: %w",
-			err,
+			"decode json: %s: %w",
+			jsonDecodeErrorText(err),
 			core_errors.ErrInvalidArgument,
 		)
 	}
@@ -58,11 +75,47 @@ func DecodeAndValidateRequest(r *http.Request, dest any) error {
 
 	if err != nil {
 		return fmt.Errorf(
-			"request validation: %v: %w",
-			err,
+			"request validation: %s: %w",
+			validationErrorText(err),
 			core_errors.ErrInvalidArgument,
 		)
 	}
 
 	return nil
+}
+
+func jsonDecodeErrorText(err error) string {
+	if errors.Is(err, io.EOF) {
+		return "request body is empty"
+	}
+
+	var typeErr *json.UnmarshalTypeError
+	if errors.As(err, &typeErr) {
+		if typeErr.Field == "" {
+			return fmt.Sprintf("unexpected JSON %s", typeErr.Value)
+		}
+
+		return fmt.Sprintf("field '%s' has invalid type: got JSON %s", typeErr.Field, typeErr.Value)
+	}
+
+	return strings.TrimPrefix(err.Error(), "json: ")
+}
+
+func validationErrorText(err error) string {
+	var validationErrs validator.ValidationErrors
+	if !errors.As(err, &validationErrs) {
+		return err.Error()
+	}
+
+	texts := make([]string, 0, len(validationErrs))
+	for _, fieldErr := range validationErrs {
+		text := fmt.Sprintf("field '%s' failed on '%s'", fieldErr.Field(), fieldErr.Tag())
+		if fieldErr.Param() != "" {
+			text += "=" + fieldErr.Param()
+		}
+
+		texts = append(texts, text)
+	}
+
+	return strings.Join(texts, "; ")
 }

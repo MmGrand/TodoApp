@@ -47,20 +47,24 @@ func (h *HTTPResponseHandler) ErrorResponse(err error, msg string) {
 	var (
 		statusCode int
 		logFunc    func(string, ...zap.Field)
+		sentinel   error
 	)
 
 	switch {
 	case errors.Is(err, core_errors.ErrInvalidArgument):
 		statusCode = http.StatusBadRequest
 		logFunc = h.log.Warn
+		sentinel = core_errors.ErrInvalidArgument
 
 	case errors.Is(err, core_errors.ErrNotFound):
 		statusCode = http.StatusNotFound
 		logFunc = h.log.Debug
+		sentinel = core_errors.ErrNotFound
 
 	case errors.Is(err, core_errors.ErrConflict):
 		statusCode = http.StatusConflict
 		logFunc = h.log.Warn
+		sentinel = core_errors.ErrConflict
 
 	default:
 		statusCode = http.StatusInternalServerError
@@ -71,9 +75,21 @@ func (h *HTTPResponseHandler) ErrorResponse(err error, msg string) {
 
 	h.errorResponse(
 		statusCode,
-		err,
+		publicErrorText(err, sentinel),
 		msg,
 	)
+}
+
+func publicErrorText(err error, sentinel error) string {
+	current := err
+	for {
+		next := errors.Unwrap(current)
+		if next == nil || next == sentinel {
+			return current.Error()
+		}
+
+		current = next
+	}
 }
 
 func (h *HTTPResponseHandler) PanicResponse(p any, msg string) {
@@ -84,7 +100,7 @@ func (h *HTTPResponseHandler) PanicResponse(p any, msg string) {
 
 	h.errorResponse(
 		statusCode,
-		err,
+		err.Error(),
 		msg,
 	)
 }
@@ -103,10 +119,9 @@ func (h *HTTPResponseHandler) JSONResponse(
 
 func (h *HTTPResponseHandler) errorResponse(
 	statusCode int,
-	err error,
+	errText string,
 	msg string,
 ) {
-	errText := err.Error()
 	if statusCode >= http.StatusInternalServerError {
 		errText = internalErrorText
 	}

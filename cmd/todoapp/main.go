@@ -116,7 +116,9 @@ func run(logger *core_logger.Logger) error {
 		apiVersionRouterV1,
 	)
 	httpServer.RegisterRoutes(webTransportHTTP.Routes()...)
-	httpServer.RegisterSwagger()
+	if httpConfig.SwaggerEnabled {
+		httpServer.RegisterSwagger()
+	}
 	httpServer.RegisterHealthCheck(pool.Ping)
 
 	if err := httpServer.Run(ctx); err != nil {

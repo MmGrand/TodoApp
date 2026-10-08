@@ -27,7 +27,7 @@ make todoapp-run         # приложение на :5050
 |---|---|
 | Веб-интерфейс | http://localhost:5050/ |
 | API | http://localhost:5050/api/v1 |
-| Swagger | http://localhost:5050/swagger/index.html |
+| Swagger | http://localhost:5050/swagger/index.html (если `HTTP_SWAGGER_ENABLED=true`) |
 | Health check | http://localhost:5050/health |
 
 Обновить Swagger-спецификацию: `make swagger-gen`.
